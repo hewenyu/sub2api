@@ -85,9 +85,9 @@ export const Usage: React.FC = () => {
       const data = await usageApi.getRecords(filters, currentPage, pageSize);
       const transformedRecords: UsageRecord[] = (data.items || []).map((item) => ({
         id: item.id,
-        timestamp: item.created_at || item.timestamp,
+        timestamp: item.created_at,
         api_key_name: item.api_key_name,
-        account_email: item.account_email || 'N/A',
+        account_email: 'N/A',
         model: item.model,
         input_tokens: item.input_tokens,
         output_tokens: item.output_tokens,
