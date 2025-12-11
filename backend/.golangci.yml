@@ -1,0 +1,37 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    exclude-functions:
+      - (*github.com/stretchr/testify/mock.Call).Return
+  govet:
+    enable:
+      - shadow
+  staticcheck:
+    checks: ["all"]
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    # Exclude errcheck for test files
+    # Test files have different error handling requirements than production code
+    # Type assertions in tests will panic on mismatch, which is acceptable
+    - path: _test\.go
+      linters:
+        - errcheck

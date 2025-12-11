@@ -1,0 +1,156 @@
+# Go build artifacts
+# Binary executables
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries and coverage
+*.test
+*.out
+coverage.txt
+coverage.html
+*.coverprofile
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Dependencies
+vendor/
+
+# IDE and Editor files
+# VSCode
+.vscode/
+*.code-workspace
+
+# GoLand / IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Configuration files (sensitive)
+# Local configuration overrides
+config.local.yaml
+config.local.yml
+*.local.yaml
+*.local.yml
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.envrc
+
+# DO NOT ignore the default config template
+!config.yaml
+!config.example.yaml
+
+# Logs and temporary files
+# Log files
+*.log
+logs/
+log/
+
+# Temporary directories
+tmp/
+temp/
+.tmp/
+
+# Air hot-reload temporary files
+tmp/
+
+# OS-specific files
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+
+# Linux
+.directory
+.Trash-*
+
+# Docker and deployment
+# Docker volumes and data
+docker-data/
+.docker/
+docker-compose.override.yml
+
+# Local deployment artifacts
+deploy/local/
+*.tar.gz
+*.zip
+
+# Database files (if using local SQLite for testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificates and keys (security)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+ssl/
+certs/
+
+# Profiling and debugging
+*.prof
+*.pprof
+cpu.prof
+mem.prof
+*.trace
+
+# Build and release artifacts
+dist/
+release/
+build/
+out/
+
+# Generated files
+# Mock files (if using mockgen)
+*_mock.go
+mocks/
+
+# Generated protobuf files (if using)
+*.pb.go
+
+# Dependency management (alternative tools)
+Gopkg.lock
+glide.lock
+
+# CI/CD local artifacts
+.ci/
+.pipeline/
+
+# Backup files
+*.bak
+*.backup
+*~

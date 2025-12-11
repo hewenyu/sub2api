@@ -1,0 +1,70 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "debug"
+  read_timeout: "60s"
+  write_timeout: "60s"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "relay"
+  password: "relay123"
+  database: "claude_relay"
+  ssl_mode: "disable"
+  max_open_conns: 25
+  max_idle_conns: 10
+  conn_max_lifetime: "5m"
+  conn_max_idle_time: "10m"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 100
+
+security:
+  jwt_secret: "your-jwt-secret-change-this-in-production"
+  encryption_key: "12345678901234567890123456789012"
+  token_expiration: "24h"
+
+claude:
+  client_id: ""
+  client_secret: ""
+  redirect_uri: "http://localhost:3000/callback"
+  base_api: "https://api.claude.ai"
+  auth_url: "https://accounts.claude.ai/oauth2/authorize"
+  token_url: "https://accounts.claude.ai/oauth2/token"
+
+codex:
+  base_api: "https://api.openai.com"
+  # OAuth configuration with official Codex CLI CLIENT_ID
+  oauth:
+    client_id: "app_EMoamEEZ73f0CkXaXp7hrann"
+    client_secret: ""
+    auth_url: "https://auth.openai.com/oauth/authorize"
+    token_url: "https://auth.openai.com/oauth/token"
+    scopes: "openid profile email offline_access"
+  # Proxy configuration removed - use account-level proxy configuration
+
+limits:
+  default_concurrent_requests: 10
+  default_rate_limit_per_minute: 60
+  default_rate_limit_per_hour: 3600
+  default_rate_limit_per_day: 86400
+
+billing:
+  pricing_url: "https://www.anthropic.com/api/pricing"
+  update_interval: "24h"
+
+logging:
+  level: "debug"
+  format: "console"
+  output_path: "./logs/claude_relay.log"
+  error_output_path: "./logs/claude_relay_error.log"
+
+metrics:
+  enabled: true
+  port: 9090
+  path: "/metrics"

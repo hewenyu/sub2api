@@ -1,0 +1,69 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+  mode: "release"  # debug, release
+  read_timeout: "60s"
+  write_timeout: "60s"
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "relay"
+  password: "your-database-password"
+  database: "claude_relay"
+  ssl_mode: "disable"  # disable, require, verify-ca, verify-full
+  max_open_conns: 25
+  max_idle_conns: 10
+  conn_max_lifetime: "5m"
+  conn_max_idle_time: "10m"
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""  # Leave empty if no password
+  db: 0
+  pool_size: 100
+
+security:
+  jwt_secret: "CHANGE-THIS-TO-A-SECURE-RANDOM-STRING"
+  encryption_key: "CHANGE-THIS-TO-32-CHAR-STRING!!"  # Must be exactly 32 characters
+  token_expiration: "24h"
+
+claude:
+  client_id: "your-claude-oauth-client-id"
+  client_secret: "your-claude-oauth-client-secret"
+  redirect_uri: "http://localhost:3000/callback"
+  base_api: "https://api.claude.ai"
+  auth_url: "https://accounts.claude.ai/oauth2/authorize"
+  token_url: "https://accounts.claude.ai/oauth2/token"
+
+codex:
+  base_api: "https://api.openai.com"
+  # OAuth configuration - Uses official Codex CLI CLIENT_ID (public OAuth client)
+  oauth:
+    client_id: "app_EMoamEEZ73f0CkXaXp7hrann"  # Official Codex CLI CLIENT_ID
+    client_secret: ""  # Not required for public OAuth clients
+    auth_url: "https://auth.openai.com/oauth/authorize"
+    token_url: "https://auth.openai.com/oauth/token"
+    scopes: "openid profile email offline_access"
+
+limits:
+  default_concurrent_requests: 10
+  default_rate_limit_per_minute: 60
+  default_rate_limit_per_hour: 3600
+  default_rate_limit_per_day: 86400
+
+billing:
+  pricing_url: "https://www.anthropic.com/api/pricing"
+  update_interval: "24h"
+
+logging:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # console, json
+  output_path: "stdout"  # stdout or file path
+  error_output_path: "stderr"  # stderr or file path
+
+metrics:
+  enabled: true
+  port: 9090
+  path: "/metrics"
