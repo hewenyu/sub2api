@@ -59,12 +59,24 @@ billing:
   update_interval: "24h"
 
 logging:
-  level: "debug"
-  format: "console"
+  level: "info"
+  format: "json"
+  output: "stdout"
   output_path: "./logs/claude_relay.log"
   error_output_path: "./logs/claude_relay_error.log"
+  enable_caller: true
+  enable_stacktrace: true
+  component_levels:
+    relay: "debug"
+    scheduler: "info"
+    auth: "warn"
+  log_payloads: true
 
 metrics:
   enabled: true
   port: 9090
   path: "/metrics"
+
+scheduler:
+  strategy: "priority"
+  session_ttl: "24h"

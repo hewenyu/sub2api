@@ -32,8 +32,7 @@ export function Table<T extends Record<string, unknown>>({
   const handleSort = (key: string) => {
     if (!onSort) return;
 
-    const newDirection =
-      sortKey === key && sortDirection === 'asc' ? 'desc' : 'asc';
+    const newDirection = sortKey === key && sortDirection === 'asc' ? 'desc' : 'asc';
     onSort(key, newDirection);
   };
 
@@ -101,10 +100,7 @@ export function Table<T extends Record<string, unknown>>({
               </tr>
             ) : (
               data.map((record, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-gray-50 transition-colors"
-                >
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
                   {columns.map((column) => (
                     <td
                       key={column.key}

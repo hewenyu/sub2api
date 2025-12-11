@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
+
+	"github.com/Wei-Shaw/sub2api/backend/internal/repository/redis"
 )
 
 // MockRateLimitRepository is a mock for RateLimitRepository.
@@ -33,6 +35,24 @@ func (m *MockRateLimitRepository) GetTTL(ctx context.Context, apiKeyID int64, wi
 
 func (m *MockRateLimitRepository) Delete(ctx context.Context, apiKeyID int64, window string) error { //nolint:errcheck
 	args := m.Called(ctx, apiKeyID, window)
+	return args.Error(0)
+}
+
+func (m *MockRateLimitRepository) CheckAndIncrement(ctx context.Context, key string, limit int64, windowSeconds int) (bool, int64, time.Time, error) { //nolint:errcheck
+	args := m.Called(ctx, key, limit, windowSeconds)
+	return args.Bool(0), args.Get(1).(int64), args.Get(2).(time.Time), args.Error(3)
+}
+
+func (m *MockRateLimitRepository) GetInfo(ctx context.Context, key string, windowSeconds int) (*redis.RateLimitInfo, error) { //nolint:errcheck
+	args := m.Called(ctx, key, windowSeconds)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*redis.RateLimitInfo), args.Error(1)
+}
+
+func (m *MockRateLimitRepository) Reset(ctx context.Context, key string) error { //nolint:errcheck
+	args := m.Called(ctx, key)
 	return args.Error(0)
 }
 
@@ -133,5 +153,80 @@ func TestGetWindow(t *testing.T) {
 		// (unless we're exactly at a multiple of both)
 		assert.NotEmpty(t, window60)
 		assert.NotEmpty(t, window120)
+	})
+}
+
+func TestRateLimiter_CheckWindow(t *testing.T) {
+	logger := zap.NewNop()
+	mockRepo := new(MockRateLimitRepository)
+	limiter := NewRateLimiter(mockRepo, logger)
+	ctx := context.Background()
+
+	t.Run("no limit when limit is 0", func(t *testing.T) {
+		allowed, remaining, resetAt, err := limiter.CheckWindow(ctx, "key1", 0, 60)
+		assert.NoError(t, err)
+		assert.True(t, allowed)
+		assert.Equal(t, int64(0), remaining)
+		assert.True(t, resetAt.IsZero())
+	})
+
+	t.Run("allowed when under limit", func(t *testing.T) {
+		resetAt := time.Now().Add(60 * time.Second)
+		mockRepo.On("CheckAndIncrement", ctx, "key1", int64(10), 60).Return(true, int64(5), resetAt, nil).Once()
+
+		allowed, remaining, actualResetAt, err := limiter.CheckWindow(ctx, "key1", 10, 60)
+		assert.NoError(t, err)
+		assert.True(t, allowed)
+		assert.Equal(t, int64(5), remaining)
+		assert.Equal(t, resetAt, actualResetAt)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("not allowed when at limit", func(t *testing.T) {
+		resetAt := time.Now().Add(60 * time.Second)
+		mockRepo.On("CheckAndIncrement", ctx, "key2", int64(10), 60).Return(false, int64(0), resetAt, nil).Once()
+
+		allowed, remaining, actualResetAt, err := limiter.CheckWindow(ctx, "key2", 10, 60)
+		assert.NoError(t, err)
+		assert.False(t, allowed)
+		assert.Equal(t, int64(0), remaining)
+		assert.Equal(t, resetAt, actualResetAt)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("error from repository", func(t *testing.T) {
+		mockRepo.On("CheckAndIncrement", ctx, "key3", int64(10), 60).Return(false, int64(0), time.Time{}, errors.New("redis error")).Once()
+
+		allowed, remaining, resetAt, err := limiter.CheckWindow(ctx, "key3", 10, 60)
+		assert.Error(t, err)
+		assert.False(t, allowed)
+		assert.Equal(t, int64(0), remaining)
+		assert.True(t, resetAt.IsZero())
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestRateLimiter_ResetAPIKey(t *testing.T) {
+	logger := zap.NewNop()
+	mockRepo := new(MockRateLimitRepository)
+	limiter := NewRateLimiter(mockRepo, logger)
+	ctx := context.Background()
+
+	t.Run("successful reset", func(t *testing.T) {
+		mockRepo.On("Reset", ctx, "ratelimit:apikey:1:60").Return(nil).Once()
+		mockRepo.On("Reset", ctx, "ratelimit:apikey:1:3600").Return(nil).Once()
+		mockRepo.On("Reset", ctx, "ratelimit:apikey:1:86400").Return(nil).Once()
+
+		err := limiter.ResetAPIKey(ctx, 1)
+		assert.NoError(t, err)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("error during reset", func(t *testing.T) {
+		mockRepo.On("Reset", ctx, "ratelimit:apikey:2:60").Return(errors.New("redis error")).Once()
+
+		err := limiter.ResetAPIKey(ctx, 2)
+		assert.Error(t, err)
+		mockRepo.AssertExpectations(t)
 	})
 }

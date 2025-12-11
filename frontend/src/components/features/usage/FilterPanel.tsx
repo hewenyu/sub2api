@@ -89,9 +89,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
     <Card title="Filters" className="mb-6">
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Time Range
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Time Range</label>
           <DateRangePicker
             value={{
               start_date: filters.start_date || '',
@@ -102,9 +100,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            API Key
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
           <select
             value={filters.api_key_id || ''}
             onChange={handleApiKeyChange}
@@ -121,9 +117,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Account Type
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
           <select
             value={filters.account_type || ''}
             onChange={handleAccountTypeChange}
@@ -136,9 +130,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Model
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Model</label>
           <select
             value={filters.model || ''}
             onChange={handleModelChange}
@@ -153,11 +145,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
           </select>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleResetFilters}
-        >
+        <Button variant="outline" className="w-full" onClick={handleResetFilters}>
           Reset Filters
         </Button>
       </div>

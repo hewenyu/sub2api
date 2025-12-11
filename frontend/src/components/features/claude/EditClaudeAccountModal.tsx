@@ -67,23 +67,17 @@ export const EditClaudeAccountModal: React.FC<EditClaudeAccountModalProps> = ({
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email (Read-only)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email (Read-only)</label>
           <Input value={account?.email || ''} readOnly className="bg-gray-50" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Priority
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
           <Input
             type="number"
             min="1"
             value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })
-            }
+            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })}
           />
           <p className="text-xs text-gray-500 mt-1">Higher value means higher priority</p>
         </div>
@@ -92,9 +86,7 @@ export const EditClaudeAccountModal: React.FC<EditClaudeAccountModalProps> = ({
           <input
             type="checkbox"
             checked={formData.schedulable}
-            onChange={(e) =>
-              setFormData({ ...formData, schedulable: e.target.checked })
-            }
+            onChange={(e) => setFormData({ ...formData, schedulable: e.target.checked })}
             className="mr-2"
             id="edit-schedulable"
           />
@@ -109,9 +101,7 @@ export const EditClaudeAccountModal: React.FC<EditClaudeAccountModalProps> = ({
           </label>
           <Input
             value={formData.proxy_url || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, proxy_url: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, proxy_url: e.target.value })}
             placeholder="http://proxy:8080"
           />
         </div>

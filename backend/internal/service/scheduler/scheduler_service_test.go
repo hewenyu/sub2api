@@ -101,12 +101,18 @@ func setupSchedulerService(t *testing.T) (SchedulerService, *MockCodexAccountRep
 	strategy := scheduler.NewPriorityStrategy(concurrencyRepo)
 	logger := zap.NewNop()
 
+	healthRepo := redisRepo.NewHealthRepository(redisClient)
+
+	maxAccountConcurrency := 10
+
 	service := NewSchedulerService(
 		mockCodexRepo,
 		sessionRepo,
 		concurrencyRepo,
+		healthRepo,
 		strategy,
 		1*time.Hour,
+		maxAccountConcurrency,
 		logger,
 	)
 
@@ -315,6 +321,60 @@ func TestSchedulerService_GetCurrentConcurrency(t *testing.T) {
 	count, err := service.GetCurrentConcurrency(ctx, 100)
 	require.NoError(t, err)
 	assert.Equal(t, int64(3), count)
+}
+
+func TestSchedulerService_AcquireConcurrencySlot_RespectsAccountLimit(t *testing.T) {
+	mr := miniredis.RunT(t)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: mr.Addr(),
+	})
+	defer func() {
+		_ = redisClient.Close()
+	}()
+
+	sessionRepo := redisRepo.NewSessionRepository(redisClient)
+	concurrencyRepo := redisRepo.NewConcurrencyRepository(redisClient)
+	mockCodexRepo := new(MockCodexAccountRepository)
+	strategy := scheduler.NewPriorityStrategy(concurrencyRepo)
+	logger := zap.NewNop()
+	healthRepo := redisRepo.NewHealthRepository(redisClient)
+
+	const maxAccountConcurrency = 2
+
+	service := NewSchedulerService(
+		mockCodexRepo,
+		sessionRepo,
+		concurrencyRepo,
+		healthRepo,
+		strategy,
+		1*time.Hour,
+		maxAccountConcurrency,
+		logger,
+	)
+
+	ctx := context.Background()
+	accountID := int64(200)
+
+	// Acquire up to the limit successfully.
+	require.NoError(t, service.AcquireConcurrencySlot(ctx, accountID, "req-1", 300))
+	require.NoError(t, service.AcquireConcurrencySlot(ctx, accountID, "req-2", 300))
+
+	// When the limit is reached, the next acquire should fail and mark overload_until.
+	mockCodexRepo.On("UpdateFields", ctx, accountID, mock.MatchedBy(func(updates map[string]any) bool {
+		_, hasOverload := updates["overload_until"]
+		return hasOverload
+	})).Return(nil)
+
+	err := service.AcquireConcurrencySlot(ctx, accountID, "req-3", 300)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "account concurrency limit exceeded")
+
+	// Concurrency count in Redis should not exceed the configured limit.
+	count, err := concurrencyRepo.GetCount(ctx, accountID)
+	require.NoError(t, err)
+	assert.Equal(t, int64(maxAccountConcurrency), count)
+
+	mockCodexRepo.AssertExpectations(t)
 }
 
 func TestSchedulerService_MarkAccountUnavailable(t *testing.T) {

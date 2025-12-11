@@ -36,8 +36,7 @@ export const useAPIKeys = (initialFilters?: APIKeyFilters): UseAPIKeysResult => 
       setApiKeys(response.items);
       setTotal(response.items.length);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch API keys';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch API keys';
       message.error(errorMessage);
       setApiKeys([]);
       setTotal(0);
@@ -50,33 +49,26 @@ export const useAPIKeys = (initialFilters?: APIKeyFilters): UseAPIKeysResult => 
     fetchAPIKeys();
   }, [fetchAPIKeys]);
 
-  const createAPIKey = async (
-    data: CreateAPIKeyRequest
-  ): Promise<CreateAPIKeyResponse> => {
+  const createAPIKey = async (data: CreateAPIKeyRequest): Promise<CreateAPIKeyResponse> => {
     try {
       const result = await apikeyApi.create(data);
       message.success('API Key created successfully');
       await fetchAPIKeys();
       return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to create API key';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create API key';
       message.error(errorMessage);
       throw error;
     }
   };
 
-  const updateAPIKey = async (
-    id: number,
-    data: Partial<CreateAPIKeyRequest>
-  ): Promise<void> => {
+  const updateAPIKey = async (id: number, data: Partial<CreateAPIKeyRequest>): Promise<void> => {
     try {
       await apikeyApi.update(id, data);
       message.success('API Key updated successfully');
       await fetchAPIKeys();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to update API key';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update API key';
       message.error(errorMessage);
       throw error;
     }
@@ -88,8 +80,7 @@ export const useAPIKeys = (initialFilters?: APIKeyFilters): UseAPIKeysResult => 
       message.success('API Key deleted successfully');
       await fetchAPIKeys();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to delete API key';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete API key';
       message.error(errorMessage);
       throw error;
     }

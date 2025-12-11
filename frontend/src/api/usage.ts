@@ -1,5 +1,12 @@
 import { request } from '@/utils/request';
-import type { UsageSummary, UsageFilters, RequestRecord, UsageByModel, UsageByKey, UsageStats } from '@/types/usage';
+import type {
+  UsageSummary,
+  UsageFilters,
+  RequestRecord,
+  UsageByModel,
+  UsageByKey,
+  UsageStats,
+} from '@/types/usage';
 
 export const usageApi = {
   /**
@@ -7,16 +14,18 @@ export const usageApi = {
    */
   getSummary: async (filters?: UsageFilters): Promise<UsageSummary> => {
     const response = await request.get<UsageSummary>('/usage/summary', filters);
-    return response.data.data || {
-      total_requests: 0,
-      total_cost: 0,
-      total_input_tokens: 0,
-      total_output_tokens: 0,
-      claude_account_count: 0,
-      codex_account_count: 0,
-      api_key_count: 0,
-      daily_usage: [],
-    };
+    return (
+      response.data.data || {
+        total_requests: 0,
+        total_cost: 0,
+        total_input_tokens: 0,
+        total_output_tokens: 0,
+        claude_account_count: 0,
+        codex_account_count: 0,
+        api_key_count: 0,
+        daily_usage: [],
+      }
+    );
   },
 
   /**
@@ -32,14 +41,16 @@ export const usageApi = {
    */
   getStats: async (filters?: UsageFilters): Promise<UsageStats> => {
     const response = await request.get<UsageStats>('/admin/usage/stats', filters);
-    return response.data.data || {
-      total_requests: 0,
-      total_cost: 0,
-      total_input_tokens: 0,
-      total_output_tokens: 0,
-      avg_cost_per_request: 0,
-      most_used_model: '',
-    };
+    return (
+      response.data.data || {
+        total_requests: 0,
+        total_cost: 0,
+        total_input_tokens: 0,
+        total_output_tokens: 0,
+        avg_cost_per_request: 0,
+        most_used_model: '',
+      }
+    );
   },
 
   /**
@@ -77,10 +88,8 @@ export const usageApi = {
    * Export usage data as CSV
    */
   exportCSV: async (filters?: UsageFilters): Promise<Blob> => {
-    const response = await fetch('/admin/usage/export?' + new URLSearchParams({
-      ...filters as any,
-      format: 'csv'
-    }));
+    const params = new URLSearchParams({ ...(filters as Record<string, string>), format: 'csv' });
+    const response = await fetch('/admin/usage/export?' + params);
     return response.blob();
   },
 
@@ -88,10 +97,8 @@ export const usageApi = {
    * Export usage data as Excel
    */
   exportExcel: async (filters?: UsageFilters): Promise<Blob> => {
-    const response = await fetch('/admin/usage/export?' + new URLSearchParams({
-      ...filters as any,
-      format: 'xlsx'
-    }));
+    const params = new URLSearchParams({ ...(filters as Record<string, string>), format: 'xlsx' });
+    const response = await fetch('/admin/usage/export?' + params);
     return response.blob();
   },
 };

@@ -33,21 +33,21 @@ interface UsageChartProps {
 
 export const UsageChart: React.FC<UsageChartProps> = React.memo(({ data, isLoading }) => {
   const chartData = useMemo(() => {
-    const sortedData = [...data].sort((a, b) =>
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+    const sortedData = [...data].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
     const limitedData = sortedData.slice(-30);
 
     return {
-      labels: limitedData.map(item => {
+      labels: limitedData.map((item) => {
         const date = new Date(item.date);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       }),
       datasets: [
         {
           label: 'Requests',
-          data: limitedData.map(item => item.requests),
+          data: limitedData.map((item) => item.requests),
           borderColor: '#1e40af',
           backgroundColor: 'rgba(30, 64, 175, 0.1)',
           fill: true,
@@ -55,7 +55,7 @@ export const UsageChart: React.FC<UsageChartProps> = React.memo(({ data, isLoadi
         },
         {
           label: 'Cost ($)',
-          data: limitedData.map(item => item.cost),
+          data: limitedData.map((item) => item.cost),
           borderColor: '#10b981',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
           fill: true,
@@ -66,57 +66,60 @@ export const UsageChart: React.FC<UsageChartProps> = React.memo(({ data, isLoadi
     };
   }, [data]);
 
-  const options = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index' as const,
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        position: 'top' as const,
+  const options = useMemo(
+    () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index' as const,
+        intersect: false,
       },
-      title: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: TooltipItem<'line'>) => {
-            const label = context.dataset.label || '';
-            const value = context.parsed.y;
-            if (label === 'Cost ($)') {
-              return `${label}: $${value?.toFixed(4) || '0'}`;
-            }
-            return `${label}: ${value || 0}`;
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: TooltipItem<'line'>) => {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              if (label === 'Cost ($)') {
+                return `${label}: $${value?.toFixed(4) || '0'}`;
+              }
+              return `${label}: ${value || 0}`;
+            },
           },
         },
       },
-    },
-    scales: {
-      y: {
-        type: 'linear' as const,
-        display: true,
-        position: 'left' as const,
-        title: {
+      scales: {
+        y: {
+          type: 'linear' as const,
           display: true,
-          text: 'Requests',
+          position: 'left' as const,
+          title: {
+            display: true,
+            text: 'Requests',
+          },
+        },
+        y1: {
+          type: 'linear' as const,
+          display: true,
+          position: 'right' as const,
+          title: {
+            display: true,
+            text: 'Cost ($)',
+          },
+          grid: {
+            drawOnChartArea: false,
+          },
         },
       },
-      y1: {
-        type: 'linear' as const,
-        display: true,
-        position: 'right' as const,
-        title: {
-          display: true,
-          text: 'Cost ($)',
-        },
-        grid: {
-          drawOnChartArea: false,
-        },
-      },
-    },
-  }), []);
+    }),
+    []
+  );
 
   if (isLoading) {
     return (

@@ -34,9 +34,8 @@ export const AccountStatus: React.FC<AccountStatusProps> = React.memo(({ status,
   //   ? (status.claude_healthy / status.claude_total) * 100
   //   : 0;
 
-  const codexHealthPercentage = status.codex_total > 0
-    ? (status.codex_healthy / status.codex_total) * 100
-    : 0;
+  const codexHealthPercentage =
+    status.codex_total > 0 ? (status.codex_healthy / status.codex_total) * 100 : 0;
 
   const getHealthBadge = (percentage: number) => {
     if (percentage >= 80) return <Badge variant="success">Healthy</Badge>;
@@ -108,8 +107,11 @@ export const AccountStatus: React.FC<AccountStatusProps> = React.memo(({ status,
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all ${
-                  codexHealthPercentage >= 80 ? 'bg-green-500' :
-                  codexHealthPercentage >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                  codexHealthPercentage >= 80
+                    ? 'bg-green-500'
+                    : codexHealthPercentage >= 50
+                      ? 'bg-yellow-500'
+                      : 'bg-red-500'
                 }`}
                 style={{ width: `${codexHealthPercentage}%` }}
               />
@@ -119,13 +121,16 @@ export const AccountStatus: React.FC<AccountStatusProps> = React.memo(({ status,
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="text-xs text-gray-600">OAuth Accounts</p>
               <p className="text-lg font-semibold text-gray-900 mt-1">
-                {status.codex_accounts.filter(acc => acc.account_type === 'openai-oauth').length}
+                {status.codex_accounts.filter((acc) => acc.account_type === 'openai-oauth').length}
               </p>
             </div>
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="text-xs text-gray-600">OpenAI Responses</p>
               <p className="text-lg font-semibold text-gray-900 mt-1">
-                {status.codex_accounts.filter(acc => acc.account_type === 'openai-responses').length}
+                {
+                  status.codex_accounts.filter((acc) => acc.account_type === 'openai-responses')
+                    .length
+                }
               </p>
             </div>
           </div>

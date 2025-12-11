@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/backend/internal/repository/redis"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/account"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/billing"
+	"github.com/Wei-Shaw/sub2api/backend/internal/service/circuitbreaker"
 )
 
 // Mock SchedulerService
@@ -72,6 +73,11 @@ func (m *MockSchedulerService) GetCurrentConcurrency(ctx context.Context, accoun
 
 func (m *MockSchedulerService) MarkAccountUnavailable(ctx context.Context, accountID int64, reason string, resetAfter time.Duration) error {
 	args := m.Called(ctx, accountID, reason, resetAfter)
+	return args.Error(0)
+}
+
+func (m *MockSchedulerService) ReportHealthStatus(ctx context.Context, accountID int64, success bool) error {
+	args := m.Called(ctx, accountID, success)
 	return args.Error(0)
 }
 
@@ -295,7 +301,7 @@ func TestCodexRelayService_HandleNonStreamResponse(t *testing.T) {
 		httpClient := &http.Client{Timeout: 30 * time.Second}
 		mockClientManager := new(MockProxyClientManager)
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
-		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger)
+		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger, true)
 
 		// Create test request
 		reqBody := &CodexRequest{
@@ -343,7 +349,7 @@ func TestCodexRelayService_HandleNonStreamResponse(t *testing.T) {
 			Return(int64(0), "", assert.AnError)
 
 		mockClientManager := new(MockProxyClientManager)
-		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger)
+		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger, true)
 
 		reqBody := &CodexRequest{
 			Model:    "gpt-4",
@@ -451,7 +457,7 @@ func TestCodexRelayService_HandleNonStreamResponse(t *testing.T) {
 		httpClient := &http.Client{Timeout: 30 * time.Second}
 		mockClientManager := new(MockProxyClientManager)
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
-		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger)
+		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger, true)
 
 		// Request body
 		reqBody := &CodexRequest{
@@ -536,7 +542,7 @@ func TestCodexRelayService_HandleStreamResponse(t *testing.T) {
 		httpClient := &http.Client{Timeout: 30 * time.Second}
 		mockClientManager := new(MockProxyClientManager)
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
-		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger)
+		service := NewCodexRelayService(mockScheduler, mockAccount, mockCollector, mockClientManager, logger, true)
 
 		reqBody := &CodexRequest{
 			Model:    "gpt-4",
@@ -602,7 +608,9 @@ func TestCodexRelayService_ForwardRequest(t *testing.T) {
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
 		service := &codexRelayService{
 			clientManager: mockClientManager,
+			cbManager:     circuitbreaker.NewManager(),
 			logger:        logger,
+			logPayloads:   true,
 		}
 
 		rawBody, _ := json.Marshal(reqBody)
@@ -646,7 +654,9 @@ func TestCodexRelayService_ForwardRequest(t *testing.T) {
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
 		service := &codexRelayService{
 			clientManager: mockClientManager,
+			cbManager:     circuitbreaker.NewManager(),
 			logger:        logger,
+			logPayloads:   true,
 		}
 
 		rawBody, _ := json.Marshal(reqBody)
@@ -685,7 +695,9 @@ func TestCodexRelayService_ForwardRequest(t *testing.T) {
 		mockClientManager.On("GetStreamingClient", mock.Anything, "").Return(httpClient, nil)
 		service := &codexRelayService{
 			clientManager: mockClientManager,
+			cbManager:     circuitbreaker.NewManager(),
 			logger:        logger,
+			logPayloads:   true,
 		}
 
 		rawBody, _ := json.Marshal(reqBody)

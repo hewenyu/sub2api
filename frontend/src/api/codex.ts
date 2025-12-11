@@ -70,7 +70,9 @@ export const codexApi = {
   /**
    * Generate OAuth authorization URL
    */
-  generateAuthURL: async (callbackPort: number = 1455): Promise<{
+  generateAuthURL: async (
+    callbackPort: number = 1455
+  ): Promise<{
     auth_url: string;
     callback_url: string;
     state: string;

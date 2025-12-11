@@ -7,27 +7,18 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
-	"golang.org/x/oauth2"
 
 	"github.com/Wei-Shaw/sub2api/backend/config"
 	"github.com/Wei-Shaw/sub2api/backend/internal/api/admin"
 	"github.com/Wei-Shaw/sub2api/backend/internal/api/codex"
 	"github.com/Wei-Shaw/sub2api/backend/internal/middleware"
-	"github.com/Wei-Shaw/sub2api/backend/internal/repository/postgres"
-	"github.com/Wei-Shaw/sub2api/backend/internal/repository/redis"
-	"github.com/Wei-Shaw/sub2api/backend/internal/scheduler"
-	"github.com/Wei-Shaw/sub2api/backend/internal/service/account"
-	adminservice "github.com/Wei-Shaw/sub2api/backend/internal/service/admin"
-	"github.com/Wei-Shaw/sub2api/backend/internal/service/billing"
-	"github.com/Wei-Shaw/sub2api/backend/internal/service/proxy"
-	"github.com/Wei-Shaw/sub2api/backend/internal/service/relay"
-	schedulersvc "github.com/Wei-Shaw/sub2api/backend/internal/service/scheduler"
+	"github.com/Wei-Shaw/sub2api/backend/internal/shutdown"
 	"github.com/Wei-Shaw/sub2api/backend/pkg/database"
 	"github.com/Wei-Shaw/sub2api/backend/pkg/logger"
 )
@@ -39,14 +30,18 @@ var (
 func main() {
 	flag.Parse()
 
-	// Load configuration
 	cfg, err := config.LoadConfig(*configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Initialize logger
+	validator := config.NewValidator()
+	if err := validator.Validate(cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid configuration: %v\n", err)
+		os.Exit(1)
+	}
+
 	logConfig := logger.LoggingConfig{
 		Level:           cfg.Logging.Level,
 		Format:          cfg.Logging.Format,
@@ -67,160 +62,65 @@ func main() {
 		zap.String("mode", cfg.Server.Mode),
 	)
 
-	// Initialize database
 	db, err := database.NewPostgresDB(&cfg.Database, log)
 	if err != nil {
 		log.Fatal("Failed to initialize database", zap.Error(err))
 	}
-	defer func() {
-		if closeErr := db.Close(); closeErr != nil {
-			log.Error("Failed to close database", zap.Error(closeErr))
-		}
-	}()
-
 	log.Info("Database initialized successfully")
 
-	// Initialize Redis
 	redisClient, err := database.NewRedisClient(&cfg.Redis, log)
 	if err != nil {
 		log.Fatal("Failed to initialize Redis", zap.Error(err))
 	}
-	defer func() {
-		if err := redisClient.Close(); err != nil {
-			log.Error("Failed to close Redis", zap.Error(err))
-		}
-	}()
-
 	log.Info("Redis initialized successfully")
 
-	// Initialize repositories
-	codexAccountRepo := postgres.NewCodexAccountRepository(db.DB)
-	apiKeyRepo := postgres.NewAPIKeyRepository(db.DB)
-	adminRepo := postgres.NewAdminRepository(db.DB)
-	usageRepo := postgres.NewUsageRepository(db.DB)
-	proxyRepo := postgres.NewProxyConfigRepository(db.DB)
-	sessionRepo := redis.NewSessionRepository(redisClient.Client)
-	concurrencyRepo := redis.NewConcurrencyRepository(redisClient.Client)
-	oauthStateRepo := redis.NewOAuthStateRepository(redisClient.Client)
-
-	// Initialize OAuth2 config for Codex (OpenAI)
-	// Split scopes string by space (e.g., "openid profile email offline_access")
-	scopesStr := cfg.Codex.OAuth.Scopes
-	var scopes []string
-	if scopesStr != "" {
-		scopes = strings.Split(strings.TrimSpace(scopesStr), " ")
-	}
-	codexOAuthConfig := &oauth2.Config{
-		ClientID:     cfg.Codex.OAuth.ClientID,
-		ClientSecret: cfg.Codex.OAuth.ClientSecret,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:   cfg.Codex.OAuth.AuthURL,
-			TokenURL:  cfg.Codex.OAuth.TokenURL,
-			AuthStyle: oauth2.AuthStyleInParams, // CRITICAL: Send client_id in POST body, not as HTTP Basic Auth
-			// OpenAI OAuth requires client_id in request body for public clients (no client_secret)
-			// This matches the Node.js implementation behavior
-		},
-		Scopes: scopes,
+	services, err := InitializeServices(cfg, log, db, redisClient.Client)
+	if err != nil {
+		log.Fatal("Failed to initialize services", zap.Error(err))
 	}
 
-	// Initialize services
-	adminService := adminservice.NewAdminService(
-		adminRepo,
-		cfg.Security.JWTSecret,
-		cfg.Security.TokenExpiration,
-		log,
-	)
-
-	// Initialize proxy client manager
-	proxyClientManager := proxy.NewProxyClientManager(
-		proxyRepo,
-		cfg.Security.EncryptionKey,
-		log,
-	)
-
-	// Initialize proxy config service
-	proxyConfigService := proxy.NewProxyConfigService(
-		proxyRepo,
-		cfg.Security.EncryptionKey,
-		log,
-		proxyClientManager,
-	)
-
-	// Create default HTTP client for OAuth operations (when no proxy is configured)
-	defaultHTTPClient := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-
-	codexAccountService := account.NewCodexAccountService(
-		codexAccountRepo,
-		oauthStateRepo,
-		cfg.Security.EncryptionKey,
-		codexOAuthConfig,
-		defaultHTTPClient,
-		proxyClientManager,
-		log,
-	)
-
-	// Initialize billing services
-	pricingFile := "config/model_prices_and_context_window.json"
-	pricingService := billing.NewPricingService(pricingFile, log)
-	if err := pricingService.LoadPricing(); err != nil {
+	if err := services.PricingService.LoadPricing(); err != nil {
 		log.Fatal("Failed to load pricing data", zap.Error(err))
 	}
 
-	costCalculator := billing.NewCostCalculator(pricingService, log)
-	usageCollector := billing.NewUsageCollector(usageRepo, costCalculator, log)
-
-	// Initialize scheduler service
-	strategy := scheduler.NewPriorityStrategy(concurrencyRepo)
-	sessionTTL := 24 * time.Hour
-	schedulerService := schedulersvc.NewSchedulerService(
-		codexAccountRepo,
-		sessionRepo,
-		concurrencyRepo,
-		strategy,
-		sessionTTL,
-		log,
-	)
-
-	// Initialize and start cleanup service (clears expired rate limits)
-	cleanupInterval := 5 * time.Minute // Check every 5 minutes, same as Node.js implementation
-	cleanupService := schedulersvc.NewCleanupService(
-		codexAccountRepo,
-		log,
-		cleanupInterval,
-	)
 	ctx := context.Background()
-	cleanupService.Start(ctx)
-	log.Info("Cleanup service started",
-		zap.Duration("interval", cleanupInterval),
-	)
+	services.CleanupService.Start(ctx)
+	log.Info("Cleanup service started", zap.Duration("interval", 5*time.Minute))
 
-	// Initialize relay service with proxy client manager
-	codexRelayService := relay.NewCodexRelayService(
-		schedulerService,
-		codexAccountService,
-		usageCollector,
-		proxyClientManager,
-		log,
-	)
+	services.HealthChecker.Start(ctx)
+	log.Info("Health checker started", zap.Duration("interval", 2*time.Minute))
 
 	log.Info("All services initialized successfully")
 
-	// Redirect Gin's default output to our logger
-	// Gin outputs debug info (route registration, etc.) to gin.DefaultWriter
+	configWatcher := config.NewWatcher(
+		*configPath,
+		cfg,
+		validator,
+		func(newConfig *config.Config) {
+			log.Info("Configuration updated",
+				zap.String("server_mode", newConfig.Server.Mode),
+				zap.String("log_level", newConfig.Logging.Level),
+			)
+		},
+		log,
+	)
+	configWatcher.Start()
+	defer configWatcher.Stop()
+	log.Info("Config watcher started", zap.String("config_path", *configPath))
+
+	requestTracker := shutdown.NewRequestTracker()
+
 	gin.DefaultWriter = logger.NewGinWriter(log)
 	gin.DefaultErrorWriter = logger.NewGinWriter(log)
-
-	// Set Gin mode
 	gin.SetMode(cfg.Server.Mode)
 
-	// Create Gin engine
 	router := gin.New()
-	router.Use(middleware.ZapLogger(log))
+	router.Use(middleware.RequestTrackerMiddleware(requestTracker))
+
+	loggingMiddleware := middleware.NewLoggingMiddleware(log)
+	router.Use(loggingMiddleware.Handler())
 	router.Use(middleware.ZapRecovery(log))
 
-	// CORS middleware
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -235,7 +135,6 @@ func main() {
 		c.Next()
 	})
 
-	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":    "ok",
@@ -243,22 +142,19 @@ func main() {
 		})
 	})
 
-	// API routes
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
 	apiV1 := router.Group("/api/v1")
 
-	// Admin authentication routes (public)
-	loginHandler := admin.NewLoginHandler(adminService, adminRepo, log)
+	loginHandler := admin.NewLoginHandler(services.AdminService, services.AdminRepo, log)
 	apiV1.POST("/admin/login", loginHandler.Login)
 
-	// Admin routes (protected by admin authentication)
 	adminGroup := apiV1.Group("/admin")
-	adminGroup.Use(middleware.AuthenticateAdmin(adminService, log))
+	adminGroup.Use(middleware.AuthenticateAdmin(services.AdminService, log))
 	{
-		// Admin info
 		adminGroup.GET("/info", loginHandler.GetInfo)
 
-		// Codex account management
-		codexAccountHandler := admin.NewCodexAccountHandler(codexAccountService, log)
+		codexAccountHandler := admin.NewCodexAccountHandler(services.CodexAccountService, log)
 		adminGroup.POST("/codex-accounts/generate-auth-url", codexAccountHandler.GenerateAuthURL)
 		adminGroup.POST("/codex-accounts/verify-auth", codexAccountHandler.VerifyAuth)
 		adminGroup.POST("/codex-accounts", codexAccountHandler.CreateAccount)
@@ -271,8 +167,7 @@ func main() {
 		adminGroup.POST("/codex-accounts/:id/refresh-token", codexAccountHandler.RefreshToken)
 		adminGroup.POST("/codex-accounts/:id/clear-rate-limit", codexAccountHandler.ClearRateLimit)
 
-		// API Key management
-		apiKeyHandler := admin.NewAPIKeyHandler(apiKeyRepo, log)
+		apiKeyHandler := admin.NewAPIKeyHandler(services.APIKeyRepo, log)
 		adminGroup.POST("/api-keys", apiKeyHandler.CreateAPIKey)
 		adminGroup.GET("/api-keys", apiKeyHandler.ListAPIKeys)
 		adminGroup.GET("/api-keys/:id", apiKeyHandler.GetAPIKey)
@@ -280,8 +175,7 @@ func main() {
 		adminGroup.DELETE("/api-keys/:id", apiKeyHandler.DeleteAPIKey)
 		adminGroup.PATCH("/api-keys/:id/toggle", apiKeyHandler.ToggleAPIKeyStatus)
 
-		// Proxy management
-		proxyHandler := admin.NewProxyHandler(proxyConfigService, log)
+		proxyHandler := admin.NewProxyHandler(services.ProxyConfigService, log)
 		adminGroup.GET("/proxies", proxyHandler.ListProxies)
 		adminGroup.POST("/proxies", proxyHandler.CreateProxy)
 		adminGroup.GET("/proxies/names", proxyHandler.GetProxyNames)
@@ -291,7 +185,6 @@ func main() {
 		adminGroup.POST("/proxies/:id/set-default", proxyHandler.SetDefaultProxy)
 		adminGroup.POST("/proxies/:id/test", proxyHandler.TestProxy)
 
-		// Usage Records (placeholder - TODO: Implement usage record handler)
 		adminGroup.GET("/usage-records", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"code":    0,
@@ -306,7 +199,6 @@ func main() {
 			})
 		})
 
-		// Admin Management (placeholder - TODO: Implement admin management handler)
 		adminGroup.GET("/admins", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"code":    0,
@@ -322,24 +214,23 @@ func main() {
 		})
 	}
 
-	// Codex relay routes (OpenAI-compatible API, protected by API key)
 	codexGroup := router.Group("/openai")
-	codexGroup.Use(middleware.AuthenticateAPIKey(apiKeyRepo, log))
+	codexGroup.Use(middleware.AuthenticateAPIKey(services.APIKeyRepo, log))
+	codexGroup.Use(middleware.RateLimitMiddleware(services.RateLimiter, log))
+	codexGroup.Use(middleware.ConcurrencyLimitMiddleware(services.ConcurrencyTracker, log))
+	codexGroup.Use(middleware.CostLimitMiddleware(services.CostLimiter, log))
 	{
-		// Chat Completions API handler (original format)
-		chatCompletionsHandler := codex.NewResponsesHandler(codexRelayService, log)
+		chatCompletionsHandler := codex.NewResponsesHandler(services.CodexRelayService, log)
 		codexGroup.POST("/chat/completions", chatCompletionsHandler.HandleResponses)
 		codexGroup.POST("/v1/chat/completions", chatCompletionsHandler.HandleResponses)
 
-		// Responses API handler (new format with 'input' field)
-		responsesAPIHandler := codex.NewResponsesAPIHandler(codexRelayService, log)
+		responsesAPIHandler := codex.NewResponsesAPIHandler(services.CodexRelayService, log)
 		codexGroup.POST("/responses", responsesAPIHandler.HandleResponsesAPI)
 		codexGroup.POST("/v1/responses", responsesAPIHandler.HandleResponsesAPI)
 	}
 
 	log.Info("Routes registered successfully")
 
-	// Create HTTP server
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
 	server := &http.Server{
 		Addr:         addr,
@@ -348,7 +239,24 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
-	// Start server in goroutine
+	shutdownTimeout := 30 * time.Second
+	if timeout := os.Getenv("SHUTDOWN_TIMEOUT"); timeout != "" {
+		if d, err := time.ParseDuration(timeout); err == nil {
+			shutdownTimeout = d
+		}
+	}
+
+	shutdownManager := shutdown.NewManager(
+		server,
+		services.CleanupService,
+		services.HealthChecker,
+		db.DB,
+		redisClient.Client,
+		requestTracker,
+		shutdownTimeout,
+		log,
+	)
+
 	go func() {
 		log.Info("Server started", zap.String("addr", addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -356,24 +264,30 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
 	quit := make(chan os.Signal, 1)
+	reload := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	signal.Notify(reload, syscall.SIGHUP)
 
-	log.Info("Shutting down server...")
+	for {
+		select {
+		case sig := <-quit:
+			log.Info("Received shutdown signal", zap.String("signal", sig.String()))
+			goto shutdown
 
-	// Stop cleanup service
-	cleanupService.Stop()
-	log.Info("Cleanup service stopped")
-
-	// Graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		log.Fatal("Server forced to shutdown", zap.Error(err))
+		case sig := <-reload:
+			configWatcher.ReloadOnSignal(sig)
+		}
 	}
 
-	log.Info("Server exited")
+shutdown:
+	log.Info("Initiating graceful shutdown")
+	requestTracker.BeginShutdown()
+
+	if err := shutdownManager.Shutdown(context.Background()); err != nil {
+		log.Error("Graceful shutdown failed", zap.Error(err))
+		os.Exit(1)
+	}
+
+	log.Info("Server stopped")
 }

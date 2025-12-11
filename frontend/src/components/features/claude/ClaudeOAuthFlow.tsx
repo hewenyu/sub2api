@@ -12,11 +12,7 @@ interface ClaudeOAuthFlowProps {
   onSuccess: () => void;
 }
 
-export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
-  isOpen,
-  onClose,
-  onSuccess,
-}) => {
+export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({ isOpen, onClose, onSuccess }) => {
   const [step, setStep] = useState<'generate' | 'link' | 'verify' | 'configure'>('generate');
   const [loading, setLoading] = useState(false);
   const [callbackPort, setCallbackPort] = useState(8888);
@@ -41,7 +37,8 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
       setState(response.state);
       setStep('link');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate authorization link';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to generate authorization link';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -197,7 +194,9 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
             <Button variant="ghost" onClick={() => setStep('generate')}>
               Previous
             </Button>
-            <Button variant="gradient-orange" onClick={() => setStep('verify')}>Next</Button>
+            <Button variant="gradient-orange" onClick={() => setStep('verify')}>
+              Next
+            </Button>
           </div>
         </div>
       )}
@@ -216,13 +215,19 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
               onChange={(e) => setAuthInput(e.target.value)}
               className="w-full px-4 py-3 border rounded-lg font-mono text-sm"
               rows={3}
-              placeholder={'Paste the full callback URL, for example:\nhttp://localhost:8888/callback?code=xxx&state=yyy'}
+              placeholder={
+                'Paste the full callback URL, for example:\nhttp://localhost:8888/callback?code=xxx&state=yyy'
+              }
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Or Just the Authorization Code (code parameter value)</label>
-            <p className="text-xs text-gray-500">Or paste only the value of the code parameter from the URL</p>
+            <label className="block text-sm font-medium mb-2">
+              Or Just the Authorization Code (code parameter value)
+            </label>
+            <p className="text-xs text-gray-500">
+              Or paste only the value of the code parameter from the URL
+            </p>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -268,15 +273,17 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Subscription Level (Auto-detected)</label>
+            <label className="block text-sm font-medium mb-2">
+              Subscription Level (Auto-detected)
+            </label>
             <div className="px-4 py-2 border rounded-lg bg-gray-50">
               <span
                 className={`px-3 py-1 text-sm font-semibold rounded ${
                   subscriptionLevel === 'max'
                     ? 'bg-purple-100 text-purple-800'
                     : subscriptionLevel === 'pro'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-gray-100 text-gray-800'
                 }`}
               >
                 {subscriptionLevel.toUpperCase()}
@@ -302,7 +309,9 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
               className="mr-2"
               id="schedulable"
             />
-            <label htmlFor="schedulable" className="text-sm font-medium">Schedulable</label>
+            <label htmlFor="schedulable" className="text-sm font-medium">
+              Schedulable
+            </label>
           </div>
 
           <div>
@@ -318,7 +327,9 @@ export const ClaudeOAuthFlow: React.FC<ClaudeOAuthFlowProps> = ({
             <Button variant="ghost" onClick={handleClose}>
               Cancel
             </Button>
-            <Button variant="gradient-orange" onClick={handleComplete}>Complete</Button>
+            <Button variant="gradient-orange" onClick={handleComplete}>
+              Complete
+            </Button>
           </div>
         </div>
       )}

@@ -25,10 +25,7 @@ export interface ValidationError {
   message: string;
 }
 
-export function validateLoginForm(
-  username: string,
-  password: string
-): ValidationError[] {
+export function validateLoginForm(username: string, password: string): ValidationError[] {
   const errors: ValidationError[] = [];
 
   if (!username) {
@@ -36,7 +33,8 @@ export function validateLoginForm(
   } else if (!isValidUsername(username)) {
     errors.push({
       field: 'username',
-      message: 'Username must be 3-32 characters and contain only letters, numbers, hyphens, and underscores',
+      message:
+        'Username must be 3-32 characters and contain only letters, numbers, hyphens, and underscores',
     });
   }
 
@@ -79,10 +77,7 @@ export function validateAPIKeyForm(
   return errors;
 }
 
-export function validateCodexAccountForm(
-  email: string,
-  password: string
-): ValidationError[] {
+export function validateCodexAccountForm(email: string, password: string): ValidationError[] {
   const errors: ValidationError[] = [];
 
   if (!email) {
@@ -115,7 +110,8 @@ export function validateAdminForm(
   } else if (!isValidUsername(username)) {
     errors.push({
       field: 'username',
-      message: 'Username must be 3-32 characters and contain only letters, numbers, hyphens, and underscores',
+      message:
+        'Username must be 3-32 characters and contain only letters, numbers, hyphens, and underscores',
     });
   }
 

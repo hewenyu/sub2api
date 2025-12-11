@@ -34,8 +34,7 @@ func sanitizeHeaders(headers http.Header) map[string]string {
 
 		// Sanitize authorization headers
 		if strings.ToLower(key) == "authorization" {
-			if strings.HasPrefix(values[0], "Bearer ") {
-				apiKey := strings.TrimPrefix(values[0], "Bearer ")
+			if apiKey, found := strings.CutPrefix(values[0], "Bearer "); found {
 				sanitized[key] = "Bearer " + sanitizeAPIKey(apiKey)
 			} else {
 				sanitized[key] = "***"
@@ -189,17 +188,28 @@ func (s *codexRelayService) forwardRequest(
 	}
 
 	// Log detailed request information at DEBUG level
-	s.logger.Debug("Forwarding request to upstream",
-		zap.String("request_id", requestID),
-		zap.String("method", "POST"),
-		zap.String("upstream_url", upstreamURL),
-		zap.Any("headers", sanitizeHeaders(req.Header)),
-		zap.String("body", string(bodyBytes)),
-		zap.Int("body_size", len(bodyBytes)),
-	)
+	if s.logPayloads {
+		s.logger.Debug("Forwarding request to upstream",
+			zap.String("request_id", requestID),
+			zap.String("method", "POST"),
+			zap.String("upstream_url", upstreamURL),
+			zap.Any("headers", sanitizeHeaders(req.Header)),
+			zap.String("body", string(bodyBytes)),
+			zap.Int("body_size", len(bodyBytes)),
+		)
+	} else {
+		s.logger.Debug("Forwarding request to upstream",
+			zap.String("request_id", requestID),
+			zap.String("method", "POST"),
+			zap.String("upstream_url", upstreamURL),
+			zap.Any("headers", sanitizeHeaders(req.Header)),
+			zap.Int("body_size", len(bodyBytes)),
+		)
+	}
 
-	// Send request
-	resp, err := httpClient.Do(req)
+	// Send request with circuit breaker protection
+	cb := s.cbManager.GetBreaker(acct.AccountType, acct.ID)
+	resp, err := cb.Do(httpClient, req)
 	if err != nil {
 		s.logger.Error("Failed to send request to upstream",
 			zap.Error(err),

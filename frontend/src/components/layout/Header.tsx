@@ -20,12 +20,7 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={logout}
-          className="flex items-center gap-2"
-        >
+        <Button variant="outline" size="sm" onClick={logout} className="flex items-center gap-2">
           <LogOut className="h-4 w-4" />
           Logout
         </Button>

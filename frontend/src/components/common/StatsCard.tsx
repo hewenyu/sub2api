@@ -59,10 +59,13 @@ export const StatsCard: React.FC<StatsCardProps> = ({
             </p>
           )}
         </div>
-        <div className={cn('w-12 h-12 rounded-lg flex items-center justify-center', iconBgColors[accentColor])}>
-          <div className={cn('w-6 h-6', iconTextColors[accentColor])}>
-            {icon}
-          </div>
+        <div
+          className={cn(
+            'w-12 h-12 rounded-lg flex items-center justify-center',
+            iconBgColors[accentColor]
+          )}
+        >
+          <div className={cn('w-6 h-6', iconTextColors[accentColor])}>{icon}</div>
         </div>
       </div>
     </div>

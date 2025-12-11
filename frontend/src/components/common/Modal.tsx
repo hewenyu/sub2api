@@ -48,10 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose} />
 
       <div
         className={cn(
@@ -74,9 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
 
         <div className="px-6 py-4">{children}</div>
 
-        {footer && (
-          <div className="border-t border-gray-200 px-6 py-4">{footer}</div>
-        )}
+        {footer && <div className="border-t border-gray-200 px-6 py-4">{footer}</div>}
       </div>
     </div>
   );

@@ -54,7 +54,7 @@ export const ProxyManagement: React.FC = () => {
   const handleUpdate = async (data: CreateProxyRequest) => {
     if (!selectedProxy) return;
     try {
-      const updateData: any = { ...data };
+      const updateData: Partial<CreateProxyRequest> = { ...data };
       if (!updateData.password) delete updateData.password;
       await proxyApi.update(selectedProxy.id, updateData);
       setEditModalOpen(false);
@@ -98,11 +98,12 @@ export const ProxyManagement: React.FC = () => {
     try {
       const response = await proxyApi.test(proxy.id);
       setTestResult(response.data.data || null);
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       setTestResult({
         success: false,
         message: 'Test failed',
-        error: error.message || 'Unknown error',
+        error: errorMessage,
       });
     }
   };
@@ -151,22 +152,38 @@ export const ProxyManagement: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Protocol</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Default</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Protocol
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Address
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Default
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">Loading...</td>
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  Loading...
+                </td>
               </tr>
             ) : filteredProxies.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">No proxies found</td>
+                <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  No proxies found
+                </td>
               </tr>
             ) : (
               filteredProxies.map((proxy) => (
@@ -178,15 +195,15 @@ export const ProxyManagement: React.FC = () => {
                     <span className="text-sm text-gray-900 uppercase">{proxy.protocol}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{proxy.host}:{proxy.port}</span>
+                    <span className="text-sm text-gray-900">
+                      {proxy.host}:{proxy.port}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => handleToggle(proxy)}
                       className={`px-2 py-1 text-xs rounded-full ${
-                        proxy.enabled
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                        proxy.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                       }`}
                     >
                       {proxy.enabled ? 'Enabled' : 'Disabled'}
@@ -240,15 +257,14 @@ export const ProxyManagement: React.FC = () => {
         size="md"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="ghost" onClick={() => setCreateModalOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setCreateModalOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => createFormRef.current?.submit()}>Create</Button>
           </div>
         }
       >
-        <ProxyForm
-          ref={createFormRef}
-          onSubmit={handleCreate}
-        />
+        <ProxyForm ref={createFormRef} onSubmit={handleCreate} />
       </Modal>
 
       <Modal
@@ -258,17 +274,15 @@ export const ProxyManagement: React.FC = () => {
         size="md"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="ghost" onClick={() => setEditModalOpen(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEditModalOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => editFormRef.current?.submit()}>Save</Button>
           </div>
         }
       >
         {selectedProxy && (
-          <ProxyForm
-            ref={editFormRef}
-            initialData={selectedProxy}
-            onSubmit={handleUpdate}
-          />
+          <ProxyForm ref={editFormRef} initialData={selectedProxy} onSubmit={handleUpdate} />
         )}
       </Modal>
 
@@ -279,13 +293,19 @@ export const ProxyManagement: React.FC = () => {
         size="sm"
         footer={
           <div className="flex justify-end space-x-3">
-            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Cancel</Button>
-            <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={confirmDelete}>
+              Delete
+            </Button>
           </div>
         }
       >
         <p className="text-gray-700">
-          Are you sure you want to delete the proxy "<span className="font-semibold">{selectedProxy?.name}</span>"? This action cannot be undone.
+          Are you sure you want to delete the proxy "
+          <span className="font-semibold">{selectedProxy?.name}</span>"? This action cannot be
+          undone.
         </p>
       </Modal>
 
@@ -307,8 +327,12 @@ export const ProxyManagement: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className={`p-4 rounded-lg ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <p className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+            <div
+              className={`p-4 rounded-lg ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+            >
+              <p
+                className={`font-medium ${testResult.success ? 'text-green-800' : 'text-red-800'}`}
+              >
                 {testResult.message}
               </p>
             </div>
@@ -346,7 +370,9 @@ export const ProxyManagement: React.FC = () => {
                   {testResult.response_ms && (
                     <div>
                       <label className="text-xs text-gray-500">Response Time</label>
-                      <p className="text-sm font-medium text-gray-900">{testResult.response_ms}ms</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {testResult.response_ms}ms
+                      </p>
                     </div>
                   )}
                 </div>

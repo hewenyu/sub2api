@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @layer base {
   :root {
@@ -24,8 +24,15 @@
 
   body {
     margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      'Helvetica Neue', Arial, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      Arial,
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -63,8 +70,23 @@
   font-weight: 600;
 }
 
-.status-active { background: #d1fae5; color: #065f46; }
-.status-inactive { background: #fee2e2; color: #991b1b; }
-.status-rate-limited { background: #fef3c7; color: #92400e; }
-.status-unauthorized { background: #fee2e2; color: #991b1b; }
-.status-overloaded { background: #fce7f3; color: #831843; }
+.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.status-rate-limited {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-unauthorized {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.status-overloaded {
+  background: #fce7f3;
+  color: #831843;
+}

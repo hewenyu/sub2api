@@ -116,8 +116,7 @@ export const CodexAccounts: React.FC = () => {
       message.success('Token refreshed successfully');
       await fetchAccounts();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to refresh token';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh token';
       message.error(errorMessage);
     }
   };
@@ -207,10 +206,7 @@ export const CodexAccounts: React.FC = () => {
         title="Add Codex Account via OAuth"
         size="lg"
       >
-        <CodexOAuthFlow
-          onSuccess={handleOAuthSuccess}
-          onCancel={() => setOauthModalOpen(false)}
-        />
+        <CodexOAuthFlow onSuccess={handleOAuthSuccess} onCancel={() => setOauthModalOpen(false)} />
       </Modal>
 
       {/* Delete Confirmation */}
@@ -232,8 +228,8 @@ export const CodexAccounts: React.FC = () => {
       >
         <p className="text-gray-700">
           Are you sure you want to delete the Codex account "
-          <span className="font-semibold">{selectedAccount?.name}</span>"? This action
-          cannot be undone.
+          <span className="font-semibold">{selectedAccount?.name}</span>"? This action cannot be
+          undone.
         </p>
       </Modal>
     </div>

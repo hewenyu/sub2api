@@ -107,12 +107,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ filters, records, di
           </>
         ) : (
           <>
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -127,10 +122,7 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ filters, records, di
 
       {showMenu && !isExporting && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowMenu(false)}
-          ></div>
+          <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)}></div>
           <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
             <div className="py-1" role="menu">
               <button

@@ -9,13 +9,7 @@ export interface CardProps {
   className?: string;
 }
 
-export const Card: React.FC<CardProps> = ({
-  title,
-  description,
-  children,
-  actions,
-  className,
-}) => {
+export const Card: React.FC<CardProps> = ({ title, description, children, actions, className }) => {
   return (
     <div className={cn('rounded-md border border-gray-200 bg-white shadow-md', className)}>
       {(title || description || actions) && (

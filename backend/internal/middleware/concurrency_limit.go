@@ -24,34 +24,9 @@ func ConcurrencyLimitMiddleware(tracker limit.ConcurrencyTracker, logger *zap.Lo
 			return
 		}
 
-		// Check current concurrency count
-		current, err := tracker.GetCurrentCount(c.Request.Context(), apiKey.ID)
-		if err != nil {
-			logger.Error("Failed to get concurrency count", zap.Error(err))
-			c.Next()
-			return
-		}
-
-		if current >= int64(apiKey.MaxConcurrentRequests) {
-			logger.Warn("Concurrency limit exceeded",
-				zap.Int64("api_key_id", apiKey.ID),
-				zap.Int64("current", current),
-				zap.Int("limit", apiKey.MaxConcurrentRequests),
-			)
-			c.JSON(http.StatusTooManyRequests, gin.H{
-				"error": "Concurrency limit exceeded",
-				"details": gin.H{
-					"current": current,
-					"limit":   apiKey.MaxConcurrentRequests,
-				},
-			})
-			c.Abort()
-			return
-		}
-
-		// Acquire concurrency slot
+		// Acquire concurrency slot atomically with limit enforcement
 		requestID := uuid.New().String()
-		acquired, err := tracker.Acquire(c.Request.Context(), apiKey.ID, requestID, 300)
+		acquired, err := tracker.Acquire(c.Request.Context(), apiKey.ID, requestID, 300, apiKey.MaxConcurrentRequests)
 		if err != nil {
 			logger.Error("Failed to acquire concurrency slot", zap.Error(err))
 			c.Next()

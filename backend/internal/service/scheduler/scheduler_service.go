@@ -3,10 +3,12 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
 
+	"github.com/Wei-Shaw/sub2api/backend/internal/metrics"
 	"github.com/Wei-Shaw/sub2api/backend/internal/model"
 	"github.com/Wei-Shaw/sub2api/backend/internal/repository"
 	"github.com/Wei-Shaw/sub2api/backend/internal/repository/redis"
@@ -24,14 +26,18 @@ type SchedulerService interface {
 	ReleaseConcurrencySlot(ctx context.Context, accountID int64, requestID string) error
 	GetCurrentConcurrency(ctx context.Context, accountID int64) (int64, error)
 	MarkAccountUnavailable(ctx context.Context, accountID int64, reason string, resetAfter time.Duration) error
+	ReportHealthStatus(ctx context.Context, accountID int64, success bool) error
 }
 
 type schedulerService struct {
 	codexAccountRepo repository.CodexAccountRepository
 	sessionRepo      redis.SessionRepository
 	concurrencyRepo  redis.ConcurrencyRepository
+	healthRepo       redis.HealthRepository
 	strategy         scheduler.SelectionStrategy
 	sessionTTL       time.Duration
+	maxConcurrency   int
+	overloadDuration time.Duration
 	logger           *zap.Logger
 }
 
@@ -40,16 +46,27 @@ func NewSchedulerService(
 	codexAccountRepo repository.CodexAccountRepository,
 	sessionRepo redis.SessionRepository,
 	concurrencyRepo redis.ConcurrencyRepository,
+	healthRepo redis.HealthRepository,
 	strategy scheduler.SelectionStrategy,
 	sessionTTL time.Duration,
+	maxConcurrency int,
 	logger *zap.Logger,
 ) SchedulerService {
+	if maxConcurrency < 0 {
+		maxConcurrency = 0
+	}
+
+	const defaultOverloadDuration = 1 * time.Minute
+
 	return &schedulerService{
 		codexAccountRepo: codexAccountRepo,
 		sessionRepo:      sessionRepo,
 		concurrencyRepo:  concurrencyRepo,
+		healthRepo:       healthRepo,
 		strategy:         strategy,
 		sessionTTL:       sessionTTL,
+		maxConcurrency:   maxConcurrency,
+		overloadDuration: defaultOverloadDuration,
 		logger:           logger,
 	}
 }
@@ -60,8 +77,16 @@ func NewSchedulerService(
 //  2. Check sticky session (return cached account)
 //  3. Select from shared pool using selection strategy
 func (s *schedulerService) SelectCodexAccount(ctx context.Context, apiKey *model.APIKey, sessionHash string) (int64, string, error) {
+	start := time.Now()
+	strategyName := "default"
+	defer func() {
+		duration := time.Since(start).Seconds()
+		metrics.SchedulerSelectionDuration.WithLabelValues(strategyName).Observe(duration)
+	}()
+
 	// 1. Check for bound account
 	if apiKey.BoundCodexAccountID != nil && *apiKey.BoundCodexAccountID > 0 {
+		metrics.SchedulerSelectionsTotal.WithLabelValues(strategyName, "bound").Inc()
 		accountID := *apiKey.BoundCodexAccountID
 		account, err := s.codexAccountRepo.GetByID(ctx, accountID)
 		if err != nil {
@@ -85,6 +110,7 @@ func (s *schedulerService) SelectCodexAccount(ctx context.Context, apiKey *model
 	if sessionHash != "" {
 		sessionData, err := s.sessionRepo.Get(ctx, sessionHash)
 		if err == nil && sessionData != nil {
+			metrics.SchedulerSelectionsTotal.WithLabelValues(strategyName, "sticky").Inc()
 			// Verify account is still valid
 			account, err := s.codexAccountRepo.GetByID(ctx, sessionData.AccountID)
 			if err == nil && account.IsActive && account.Schedulable {
@@ -129,12 +155,29 @@ func (s *schedulerService) SelectCodexAccount(ctx context.Context, apiKey *model
 	}
 
 	// 3. Select from shared pool
+	metrics.SchedulerSelectionsTotal.WithLabelValues(strategyName, "pool").Inc()
 	candidates, err := s.codexAccountRepo.GetSchedulable(ctx)
 	if err != nil {
 		return 0, "", fmt.Errorf("failed to get schedulable codex accounts: %w", err)
 	}
 
-	if len(candidates) == 0 {
+	// Filter out quarantined accounts
+	var healthyCandidates []*model.CodexAccount
+	for _, candidate := range candidates {
+		quarantined, err := s.healthRepo.IsQuarantined(ctx, candidate.ID)
+		if err != nil {
+			s.logger.Warn("Failed to check quarantine status",
+				zap.Int64("account_id", candidate.ID),
+				zap.Error(err),
+			)
+			continue
+		}
+		if !quarantined {
+			healthyCandidates = append(healthyCandidates, candidate)
+		}
+	}
+
+	if len(healthyCandidates) == 0 {
 		return 0, "", fmt.Errorf("no available codex accounts")
 	}
 
@@ -144,7 +187,7 @@ func (s *schedulerService) SelectCodexAccount(ctx context.Context, apiKey *model
 		SessionHash: sessionHash,
 	}
 
-	selected, err := s.strategy.Select(ctx, candidates, selectionCtx)
+	selected, err := s.strategy.Select(ctx, healthyCandidates, selectionCtx)
 	if err != nil {
 		return 0, "", err
 	}
@@ -216,9 +259,45 @@ func (s *schedulerService) ExtendSessionTTL(ctx context.Context, sessionHash str
 
 // AcquireConcurrencySlot acquires a concurrency slot for a request.
 func (s *schedulerService) AcquireConcurrencySlot(ctx context.Context, accountID int64, requestID string, leaseSeconds int) error {
-	_, err := s.concurrencyRepo.Acquire(ctx, accountID, requestID, leaseSeconds)
+	var (
+		acquired bool
+		err      error
+	)
+
+	if s.maxConcurrency > 0 {
+		acquired, err = s.concurrencyRepo.AcquireWithLimit(ctx, accountID, requestID, s.maxConcurrency, leaseSeconds)
+	} else {
+		acquired, err = s.concurrencyRepo.Acquire(ctx, accountID, requestID, leaseSeconds)
+	}
+
 	if err != nil {
 		return fmt.Errorf("failed to acquire concurrency slot: %w", err)
+	}
+
+	if s.maxConcurrency > 0 && !acquired {
+		overloadUntil := time.Now().Add(s.overloadDuration)
+		updates := map[string]any{
+			"overload_until": overloadUntil,
+		}
+
+		if updateErr := s.codexAccountRepo.UpdateFields(ctx, accountID, updates); updateErr != nil {
+			s.logger.Warn("Failed to mark account overloaded after concurrency limit reached",
+				zap.Int64("account_id", accountID),
+				zap.Int("max_concurrent_requests", s.maxConcurrency),
+				zap.Error(updateErr),
+			)
+		} else {
+			s.logger.Warn("Account concurrency limit reached, marking as overloaded",
+				zap.Int64("account_id", accountID),
+				zap.Int("max_concurrent_requests", s.maxConcurrency),
+				zap.Time("overload_until", overloadUntil),
+			)
+		}
+
+		metrics.ConcurrencyLimit.WithLabelValues("account", strconv.FormatInt(accountID, 10)).
+			Set(float64(s.maxConcurrency))
+
+		return fmt.Errorf("account concurrency limit exceeded")
 	}
 
 	s.logger.Debug("Concurrency slot acquired",
@@ -272,6 +351,41 @@ func (s *schedulerService) MarkAccountUnavailable(ctx context.Context, accountID
 		zap.String("reason", reason),
 		zap.Time("reset_at", resetAt),
 	)
+
+	return nil
+}
+
+// ReportHealthStatus reports the health status of an account after a request.
+func (s *schedulerService) ReportHealthStatus(ctx context.Context, accountID int64, success bool) error {
+	if err := s.healthRepo.UpdateMetrics(ctx, accountID, success); err != nil {
+		return fmt.Errorf("failed to update health metrics: %w", err)
+	}
+
+	healthMetrics, err := s.healthRepo.GetMetrics(ctx, accountID)
+	if err == nil {
+		metrics.AccountHealthScore.WithLabelValues(strconv.FormatInt(accountID, 10)).Set(healthMetrics.HealthScore)
+	}
+
+	if !success {
+		if err != nil {
+			return fmt.Errorf("failed to get health metrics: %w", err)
+		}
+
+		if redis.ShouldQuarantine(healthMetrics) {
+			duration := redis.GetQuarantineDuration(healthMetrics.QuarantineCount)
+			if err := s.healthRepo.SetQuarantine(ctx, accountID, duration); err != nil {
+				return fmt.Errorf("failed to set quarantine: %w", err)
+			}
+
+			metrics.AccountQuarantineTotal.WithLabelValues(strconv.FormatInt(accountID, 10), "health_check_failed").Inc()
+
+			s.logger.Warn("Account quarantined after request failure",
+				zap.Int64("account_id", accountID),
+				zap.Duration("duration", duration),
+				zap.Float64("health_score", healthMetrics.HealthScore),
+			)
+		}
+	}
 
 	return nil
 }

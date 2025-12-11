@@ -124,27 +124,19 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({ value, onChang
         <div className="border border-gray-300 rounded-lg p-4 bg-white space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Start Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
               <Input
                 type="date"
                 value={tempRange.start_date}
-                onChange={(e) =>
-                  setTempRange({ ...tempRange, start_date: e.target.value })
-                }
+                onChange={(e) => setTempRange({ ...tempRange, start_date: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
               <Input
                 type="date"
                 value={tempRange.end_date}
-                onChange={(e) =>
-                  setTempRange({ ...tempRange, end_date: e.target.value })
-                }
+                onChange={(e) => setTempRange({ ...tempRange, end_date: e.target.value })}
               />
             </div>
           </div>

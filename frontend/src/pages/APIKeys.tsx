@@ -9,15 +9,8 @@ import { useAPIKeys } from '@/hooks/useAPIKeys';
 import type { APIKey, CreateAPIKeyRequest } from '@/types/apikey';
 
 export const APIKeys: React.FC = () => {
-  const {
-    apiKeys,
-    loading,
-    createAPIKey,
-    updateAPIKey,
-    deleteAPIKey,
-    toggleAPIKey,
-    refetch,
-  } = useAPIKeys();
+  const { apiKeys, loading, createAPIKey, updateAPIKey, deleteAPIKey, toggleAPIKey, refetch } =
+    useAPIKeys();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -60,7 +53,7 @@ export const APIKeys: React.FC = () => {
         await updateAPIKey(selectedAPIKey.id, editFormData);
         setEditModalOpen(false);
         setSelectedAPIKey(null);
-      } catch (error) {
+      } catch {
         // Error handled in hook
       }
     }
@@ -78,7 +71,7 @@ export const APIKeys: React.FC = () => {
         await deleteAPIKey(selectedAPIKey.id);
         setDeleteModalOpen(false);
         setSelectedAPIKey(null);
-      } catch (error) {
+      } catch {
         // Error handled in hook
       }
     }
@@ -173,15 +166,13 @@ export const APIKeys: React.FC = () => {
               Important: Copy and save this API Key now!
             </p>
             <p className="text-xs text-yellow-700 mt-1">
-              For security reasons, you won't be able to see the full key again after
-              closing this window.
+              For security reasons, you won't be able to see the full key again after closing this
+              window.
             </p>
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <label className="block text-xs font-medium text-gray-700 mb-2">
-              Your API Key
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-2">Your API Key</label>
             <div className="bg-white p-3 rounded border border-gray-300 font-mono text-sm break-all">
               {createdKey}
             </div>
@@ -212,14 +203,10 @@ export const APIKeys: React.FC = () => {
         <div className="space-y-6">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
             <Input
               value={editFormData.name || ''}
-              onChange={(e) =>
-                setEditFormData({ ...editFormData, name: e.target.value })
-              }
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
             />
           </div>
 
@@ -243,9 +230,7 @@ export const APIKeys: React.FC = () => {
 
           {/* Rate Limits */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Rate Limits
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Rate Limits</label>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Per Minute</label>
@@ -382,8 +367,8 @@ export const APIKeys: React.FC = () => {
       >
         <p className="text-gray-700">
           Are you sure you want to delete the API Key "
-          <span className="font-semibold">{selectedAPIKey?.name}</span>"? This action
-          cannot be undone.
+          <span className="font-semibold">{selectedAPIKey?.name}</span>"? This action cannot be
+          undone.
         </p>
       </Modal>
     </div>

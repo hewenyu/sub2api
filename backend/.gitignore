@@ -154,3 +154,6 @@ glide.lock
 *.bak
 *.backup
 *~
+
+
+# temp files created by editors

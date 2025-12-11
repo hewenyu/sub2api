@@ -35,17 +35,25 @@ func (s *codexRelayService) handleUpstreamError(
 		if resp.Body != nil {
 			bodyBytes, readErr := io.ReadAll(resp.Body)
 			if readErr == nil {
-				bodyStr := string(bodyBytes)
-				const maxLogBody = 2000
-				if len(bodyStr) > maxLogBody {
-					bodyStr = bodyStr[:maxLogBody] + "..."
-				}
+				if s.logPayloads {
+					bodyStr := string(bodyBytes)
+					const maxLogBody = 2000
+					if len(bodyStr) > maxLogBody {
+						bodyStr = bodyStr[:maxLogBody] + "..."
+					}
 
-				s.logger.Error("Upstream client error response body",
-					zap.Int("status_code", resp.StatusCode),
-					zap.Int64("account_id", accountID),
-					zap.String("body", bodyStr),
-				)
+					s.logger.Error("Upstream client error response body",
+						zap.Int("status_code", resp.StatusCode),
+						zap.Int64("account_id", accountID),
+						zap.String("body", bodyStr),
+					)
+				} else {
+					s.logger.Error("Upstream client error response (payload logging disabled)",
+						zap.Int("status_code", resp.StatusCode),
+						zap.Int64("account_id", accountID),
+						zap.Int("body_size", len(bodyBytes)),
+					)
+				}
 
 				// Restore body so it can be read again if needed.
 				resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))

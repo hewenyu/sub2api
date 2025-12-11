@@ -20,8 +20,8 @@ type MockConcurrencyTracker struct {
 	mock.Mock
 }
 
-func (m *MockConcurrencyTracker) Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int) (bool, error) { //nolint:errcheck
-	args := m.Called(ctx, apiKeyID, requestID, leaseSeconds)
+func (m *MockConcurrencyTracker) Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int, limit int) (bool, error) { //nolint:errcheck
+	args := m.Called(ctx, apiKeyID, requestID, leaseSeconds, limit)
 	return args.Bool(0), args.Error(1)
 }
 
@@ -83,8 +83,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(2), nil)
-		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300).Return(true, nil)
+		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300, 5).Return(true, nil)
 		mockTracker.On("Release", mock.Anything, int64(1), mock.AnythingOfType("string")).Return(nil)
 
 		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
@@ -94,7 +93,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		mockTracker.AssertExpectations(t)
 	})
 
-	t.Run("blocked when at limit", func(t *testing.T) {
+	t.Run("blocked when acquire returns false at limit", func(t *testing.T) {
 		mockTracker := new(MockConcurrencyTracker)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -105,7 +104,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(5), nil)
+		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300, 5).Return(false, nil)
 
 		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
 		middleware(c)
@@ -115,7 +114,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		mockTracker.AssertExpectations(t)
 	})
 
-	t.Run("blocked when over limit", func(t *testing.T) {
+	t.Run("blocked when acquire returns false over limit", func(t *testing.T) {
 		mockTracker := new(MockConcurrencyTracker)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -126,33 +125,13 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(10), nil)
+		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300, 5).Return(false, nil)
 
 		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
 		middleware(c)
 
 		assert.Equal(t, http.StatusTooManyRequests, w.Code)
 		assert.True(t, c.IsAborted())
-		mockTracker.AssertExpectations(t)
-	})
-
-	t.Run("continues on get count error", func(t *testing.T) {
-		mockTracker := new(MockConcurrencyTracker)
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("GET", "/test", nil)
-		apiKey := &model.APIKey{
-			ID:                    1,
-			MaxConcurrentRequests: 5,
-		}
-		c.Set(ContextKeyAPIKey, apiKey)
-
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(0), errors.New("redis error"))
-
-		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
-		middleware(c)
-
-		assert.Equal(t, http.StatusOK, w.Code)
 		mockTracker.AssertExpectations(t)
 	})
 
@@ -167,8 +146,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(2), nil)
-		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300).Return(false, errors.New("redis error"))
+		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300, 5).Return(false, errors.New("redis error"))
 
 		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
 		middleware(c)
@@ -188,8 +166,7 @@ func TestConcurrencyLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockTracker.On("GetCurrentCount", mock.Anything, int64(1)).Return(int64(2), nil)
-		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300).Return(false, nil)
+		mockTracker.On("Acquire", mock.Anything, int64(1), mock.AnythingOfType("string"), 300, 5).Return(false, nil)
 
 		middleware := ConcurrencyLimitMiddleware(mockTracker, logger)
 		middleware(c)

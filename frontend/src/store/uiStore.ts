@@ -12,11 +12,9 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarCollapsed: false,
 
-      toggleSidebar: () =>
-        set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
 
-      setSidebarCollapsed: (collapsed: boolean) =>
-        set({ sidebarCollapsed: collapsed }),
+      setSidebarCollapsed: (collapsed: boolean) => set({ sidebarCollapsed: collapsed }),
     }),
     {
       name: 'ui-storage',

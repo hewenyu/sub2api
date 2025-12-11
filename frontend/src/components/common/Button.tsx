@@ -2,7 +2,16 @@ import React from 'react';
 import { cn } from '@/utils/cn';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'claude' | 'codex' | 'gradient-orange' | 'success';
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'danger'
+    | 'outline'
+    | 'ghost'
+    | 'claude'
+    | 'codex'
+    | 'gradient-orange'
+    | 'success';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   children: React.ReactNode;
@@ -10,15 +19,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      variant = 'primary',
-      size = 'md',
-      loading = false,
-      disabled,
-      className,
-      children,
-      ...props
-    },
+    { variant = 'primary', size = 'md', loading = false, disabled, className, children, ...props },
     ref
   ) => {
     const baseStyles =
@@ -26,14 +27,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary: 'bg-blue-900 text-white hover:bg-blue-800 focus:ring-blue-500 shadow-lg',
-      secondary: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500',
+      secondary:
+        'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500',
       danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
       outline: 'border border-gray-300 text-gray-700 hover:bg-gray-100 focus:ring-blue-500',
       ghost: 'text-gray-700 hover:bg-gray-100 focus:ring-blue-500',
-      claude: 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white focus:ring-orange-500 shadow-lg',
-      codex: 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white focus:ring-green-500 shadow-lg',
-      'gradient-orange': 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-sm disabled:opacity-50',
-      success: 'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 shadow-sm disabled:opacity-50',
+      claude:
+        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white focus:ring-orange-500 shadow-lg',
+      codex:
+        'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white focus:ring-green-500 shadow-lg',
+      'gradient-orange':
+        'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-sm disabled:opacity-50',
+      success:
+        'bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500 shadow-sm disabled:opacity-50',
     };
 
     const sizes = {

@@ -34,12 +34,14 @@ func (s *codexRelayService) HandleRequest(c *gin.Context, apiKey *model.APIKey, 
 	)
 
 	// Log detailed request body at DEBUG level
-	if reqBodyJSON, err := json.Marshal(reqBody); err == nil {
-		s.logger.Debug("Request body details",
-			zap.String("request_id", requestID),
-			zap.String("body", string(reqBodyJSON)),
-			zap.Int("message_count", len(reqBody.Messages)),
-		)
+	if s.logPayloads {
+		if reqBodyJSON, err := json.Marshal(reqBody); err == nil {
+			s.logger.Debug("Request body details",
+				zap.String("request_id", requestID),
+				zap.String("body", string(reqBodyJSON)),
+				zap.Int("message_count", len(reqBody.Messages)),
+			)
+		}
 	}
 
 	// Generate session hash for conversation tracking

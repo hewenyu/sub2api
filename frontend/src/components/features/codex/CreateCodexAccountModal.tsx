@@ -35,7 +35,10 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
 
   useEffect(() => {
     if (isOpen) {
-      proxyApi.getProxyNames().then(res => setProxies(res.data.data || [])).catch(() => setProxies([]));
+      proxyApi
+        .getProxyNames()
+        .then((res) => setProxies(res.data.data || []))
+        .catch(() => setProxies([]));
     }
   }, [isOpen]);
 
@@ -114,8 +117,8 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
         {/* Informational Message */}
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Codex accounts use OpenAI API Keys for authentication.
-            You can generate API Keys from your{' '}
+            <strong>Note:</strong> Codex accounts use OpenAI API Keys for authentication. You can
+            generate API Keys from your{' '}
             <a
               href="https://platform.openai.com/api-keys"
               target="_blank"
@@ -123,7 +126,8 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
               className="underline hover:text-blue-900"
             >
               OpenAI Dashboard
-            </a>.
+            </a>
+            .
           </p>
         </div>
         {/* Name */}
@@ -136,9 +140,7 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="Enter account name"
           />
-          {errors.name && (
-            <p className="text-xs text-red-600 mt-1">{errors.name}</p>
-          )}
+          {errors.name && <p className="text-xs text-red-600 mt-1">{errors.name}</p>}
         </div>
 
         {/* API Key */}
@@ -151,9 +153,7 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
             onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
             placeholder="sk-..."
           />
-          {errors.api_key && (
-            <p className="text-xs text-red-600 mt-1">{errors.api_key}</p>
-          )}
+          {errors.api_key && <p className="text-xs text-red-600 mt-1">{errors.api_key}</p>}
         </div>
 
         <div>
@@ -165,9 +165,7 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
             onChange={(e) => setFormData({ ...formData, base_api: e.target.value })}
             placeholder="https://api.openai.com/v1"
           />
-          {errors.base_api && (
-            <p className="text-xs text-red-600 mt-1">{errors.base_api}</p>
-          )}
+          {errors.base_api && <p className="text-xs text-red-600 mt-1">{errors.base_api}</p>}
         </div>
 
         <div>
@@ -204,25 +202,19 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
           <Input
             type="time"
             value={formData.quota_reset_time || '00:00'}
-            onChange={(e) =>
-              setFormData({ ...formData, quota_reset_time: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, quota_reset_time: e.target.value })}
           />
           <p className="text-xs text-gray-500 mt-1">Time when daily quota resets</p>
         </div>
 
         {/* Common Fields */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Priority
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
           <Input
             type="number"
             min="1"
             value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })
-            }
+            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })}
           />
           <p className="text-xs text-gray-500 mt-1">Higher value means higher priority</p>
         </div>
@@ -231,9 +223,7 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
           <input
             type="checkbox"
             checked={formData.schedulable}
-            onChange={(e) =>
-              setFormData({ ...formData, schedulable: e.target.checked })
-            }
+            onChange={(e) => setFormData({ ...formData, schedulable: e.target.checked })}
             className="mr-2"
             id="create-schedulable"
           />
@@ -243,9 +233,7 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Proxy (Optional)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Proxy (Optional)</label>
           <select
             value={formData.proxy_name || ''}
             onChange={(e) => setFormData({ ...formData, proxy_name: e.target.value || undefined })}
@@ -260,7 +248,6 @@ export const CreateCodexAccountModal: React.FC<CreateCodexAccountModalProps> = (
           </select>
           <p className="text-xs text-gray-500 mt-1">Select proxy configuration for this account</p>
         </div>
-
       </div>
     </Modal>
   );

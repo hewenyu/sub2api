@@ -90,18 +90,14 @@ export const ClaudeAccountList: React.FC<ClaudeAccountListProps> = ({
       key: 'priority',
       title: 'Priority',
       width: '10%',
-      render: (value) => (
-        <span className="text-gray-900">{String(value)}</span>
-      ),
+      render: (value) => <span className="text-gray-900">{String(value)}</span>,
     },
     {
       key: 'last_used_at',
       title: 'Last Used',
       width: '20%',
       render: (value) => (
-        <span className="text-gray-600 text-sm">
-          {formatDate(value as string | null)}
-        </span>
+        <span className="text-gray-600 text-sm">{formatDate(value as string | null)}</span>
       ),
     },
     {

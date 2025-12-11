@@ -34,8 +34,15 @@ export const Login: React.FC = () => {
     try {
       await login({ username: username.trim(), password });
     } catch (err) {
-      const error = err as { response?: { data?: { error?: string; message?: string } }; message?: string };
-      const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Login failed. Please try again.';
+      const error = err as {
+        response?: { data?: { error?: string; message?: string } };
+        message?: string;
+      };
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        'Login failed. Please try again.';
       setError(message);
     } finally {
       setLoading(false);
@@ -49,8 +56,18 @@ export const Login: React.FC = () => {
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-blue-900 rounded-lg flex items-center justify-center">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
           </div>

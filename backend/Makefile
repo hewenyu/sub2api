@@ -19,11 +19,11 @@ help:
 
 build:
 	@echo "Building..."
-	@go build -o bin/server cmd/server/main.go
+	@go build -o bin/server ./cmd/server
 
-run:
+run: build
 	@echo "Running..."
-	@go run cmd/server/main.go -config config/config.yaml
+	@./bin/server -config config/config.yaml
 
 test:
 	@echo "Testing..."

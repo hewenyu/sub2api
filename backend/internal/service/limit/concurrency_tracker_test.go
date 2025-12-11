@@ -20,6 +20,11 @@ func (m *MockConcurrencyRepository) Acquire(ctx context.Context, accountID int64
 	return args.Bool(0), args.Error(1)
 }
 
+func (m *MockConcurrencyRepository) AcquireWithLimit(ctx context.Context, accountID int64, requestID string, limit, leaseSeconds int) (bool, error) { //nolint:errcheck
+	args := m.Called(ctx, accountID, requestID, limit, leaseSeconds)
+	return args.Bool(0), args.Error(1)
+}
+
 func (m *MockConcurrencyRepository) Release(ctx context.Context, accountID int64, requestID string) error { //nolint:errcheck
 	args := m.Called(ctx, accountID, requestID)
 	return args.Error(0)
@@ -42,18 +47,18 @@ func TestConcurrencyTracker_Acquire(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("successful acquire", func(t *testing.T) {
-		mockRepo.On("Acquire", ctx, int64(1), "req1", 300).Return(true, nil).Once()
+		mockRepo.On("AcquireWithLimit", ctx, int64(1), "req1", 5, 300).Return(true, nil).Once()
 
-		acquired, err := tracker.Acquire(ctx, 1, "req1", 300)
+		acquired, err := tracker.Acquire(ctx, 1, "req1", 300, 5)
 		assert.NoError(t, err)
 		assert.True(t, acquired)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("acquire error", func(t *testing.T) {
-		mockRepo.On("Acquire", ctx, int64(2), "req2", 300).Return(false, errors.New("redis error")).Once()
+		mockRepo.On("AcquireWithLimit", ctx, int64(2), "req2", 10, 300).Return(false, errors.New("redis error")).Once()
 
-		acquired, err := tracker.Acquire(ctx, 2, "req2", 300)
+		acquired, err := tracker.Acquire(ctx, 2, "req2", 300, 10)
 		assert.Error(t, err)
 		assert.False(t, acquired)
 		mockRepo.AssertExpectations(t)

@@ -9,6 +9,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/backend/internal/model"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/account"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/billing"
+	"github.com/Wei-Shaw/sub2api/backend/internal/service/circuitbreaker"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/proxy"
 	"github.com/Wei-Shaw/sub2api/backend/internal/service/scheduler"
 )
@@ -28,7 +29,9 @@ type codexRelayService struct {
 	accountSvc     account.CodexAccountService
 	usageCollector billing.UsageCollector
 	clientManager  proxy.ProxyClientManager
+	cbManager      *circuitbreaker.Manager
 	logger         *zap.Logger
+	logPayloads    bool
 }
 
 // oauthRefreshThreshold defines how close to the access token expiry
@@ -45,12 +48,15 @@ func NewCodexRelayService(
 	usageCollector billing.UsageCollector,
 	clientManager proxy.ProxyClientManager,
 	logger *zap.Logger,
+	logPayloads bool,
 ) CodexRelayService {
 	return &codexRelayService{
 		schedulerSvc:   schedulerSvc,
 		accountSvc:     accountSvc,
 		usageCollector: usageCollector,
 		clientManager:  clientManager,
+		cbManager:      circuitbreaker.NewManager(),
 		logger:         logger,
+		logPayloads:    logPayloads,
 	}
 }

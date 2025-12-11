@@ -46,9 +46,7 @@ export const APIKeyList: React.FC<APIKeyListProps> = ({
       key: 'name',
       title: 'Name',
       width: '20%',
-      render: (value) => (
-        <span className="font-medium text-gray-900">{String(value)}</span>
-      ),
+      render: (value) => <span className="font-medium text-gray-900">{String(value)}</span>,
     },
     {
       key: 'key_prefix',
@@ -75,9 +73,7 @@ export const APIKeyList: React.FC<APIKeyListProps> = ({
       title: 'Status',
       width: '10%',
       render: (value) => (
-        <Badge variant={value ? 'success' : 'default'}>
-          {value ? 'Active' : 'Inactive'}
-        </Badge>
+        <Badge variant={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Badge>
       ),
     },
     {

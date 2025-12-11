@@ -77,7 +77,7 @@ func (s *codexRelayService) handleStreamResponse(
 		flusher.Flush()
 
 		// Log first few chunks at DEBUG level for debugging
-		if chunkCount <= 3 {
+		if s.logPayloads && chunkCount <= 3 {
 			s.logger.Debug("Streaming response chunk",
 				zap.String("request_id", requestID),
 				zap.Int("chunk_number", chunkCount),
@@ -225,10 +225,12 @@ func (s *codexRelayService) handleStreamResponse(
 		zap.Int("total_tokens", usageData.TotalTokens),
 	)
 
-	s.logger.Debug("Last chunk sample",
-		zap.String("request_id", requestID),
-		zap.String("last_chunk", lastChunkSample),
-	)
+	if s.logPayloads {
+		s.logger.Debug("Last chunk sample",
+			zap.String("request_id", requestID),
+			zap.String("last_chunk", lastChunkSample),
+		)
+	}
 
 	// Record usage if available
 	if usageData.TotalTokens > 0 {
@@ -267,11 +269,18 @@ func (s *codexRelayService) handleNonStreamResponse(
 		return fmt.Errorf("failed to read response: %w", err)
 	}
 
-	s.logger.Debug("Response body received",
-		zap.String("request_id", requestID),
-		zap.Int("body_size", len(bodyBytes)),
-		zap.String("body_preview", string(bodyBytes[:min(len(bodyBytes), 200)])),
-	)
+	if s.logPayloads {
+		s.logger.Debug("Response body received",
+			zap.String("request_id", requestID),
+			zap.Int("body_size", len(bodyBytes)),
+			zap.String("body_preview", string(bodyBytes[:min(len(bodyBytes), 200)])),
+		)
+	} else {
+		s.logger.Debug("Response body received",
+			zap.String("request_id", requestID),
+			zap.Int("body_size", len(bodyBytes)),
+		)
+	}
 
 	// Attempt to parse as CodexResponse for usage extraction and logging
 	var resp CodexResponse
@@ -286,11 +295,20 @@ func (s *codexRelayService) handleNonStreamResponse(
 	}
 
 	// Log parsed response summary
-	if respJSON, err := json.Marshal(resp); err == nil {
+	if s.logPayloads {
+		if respJSON, err := json.Marshal(resp); err == nil {
+			s.logger.Debug("Parsed CodexResponse from upstream",
+				zap.String("request_id", requestID),
+				zap.Int("choices_count", len(resp.Choices)),
+				zap.String("response_json", string(respJSON)),
+				zap.String("response_id", resp.ID),
+				zap.String("model", resp.Model),
+			)
+		}
+	} else {
 		s.logger.Debug("Parsed CodexResponse from upstream",
 			zap.String("request_id", requestID),
 			zap.Int("choices_count", len(resp.Choices)),
-			zap.String("response_json", string(respJSON)),
 			zap.String("response_id", resp.ID),
 			zap.String("model", resp.Model),
 		)

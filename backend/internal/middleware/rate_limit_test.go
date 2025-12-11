@@ -31,6 +31,16 @@ func (m *MockRateLimiter) IncrementCounter(ctx context.Context, apiKeyID int64, 
 	return args.Error(0)
 }
 
+func (m *MockRateLimiter) CheckWindow(ctx context.Context, key string, limit int64, windowSeconds int) (bool, int64, time.Time, error) { //nolint:errcheck
+	args := m.Called(ctx, key, limit, windowSeconds)
+	return args.Bool(0), args.Get(1).(int64), args.Get(2).(time.Time), args.Error(3)
+}
+
+func (m *MockRateLimiter) ResetAPIKey(ctx context.Context, apiKeyID int64) error { //nolint:errcheck
+	args := m.Called(ctx, apiKeyID)
+	return args.Error(0)
+}
+
 func TestRateLimitMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	logger := zap.NewNop()
@@ -71,20 +81,27 @@ func TestRateLimitMiddleware(t *testing.T) {
 		apiKey := &model.APIKey{
 			ID:                 1,
 			RateLimitPerMinute: 60,
+			RateLimitPerHour:   1000,
+			RateLimitPerDay:    10000,
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockLimiter.On("CheckLimit", mock.Anything, int64(1), mock.AnythingOfType("string"), int64(60)).Return(true, int64(10), nil)
-		mockLimiter.On("IncrementCounter", mock.Anything, int64(1), mock.AnythingOfType("string"), 60*time.Second).Return(nil)
+		resetAt := time.Now().Add(60 * time.Second)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:60", int64(60), 60).Return(true, int64(10), resetAt, nil)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:3600", int64(1000), 3600).Return(true, int64(100), resetAt, nil)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:86400", int64(10000), 86400).Return(true, int64(1000), resetAt, nil)
 
 		middleware := RateLimitMiddleware(mockLimiter, logger)
 		middleware(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "60", w.Header().Get("X-RateLimit-Limit-Minute"))
+		assert.Equal(t, "10", w.Header().Get("X-RateLimit-Remaining-Minute"))
+		assert.NotEmpty(t, w.Header().Get("X-RateLimit-Reset-Minute"))
 		mockLimiter.AssertExpectations(t)
 	})
 
-	t.Run("blocked when at limit", func(t *testing.T) {
+	t.Run("blocked when minute limit exceeded", func(t *testing.T) {
 		mockLimiter := new(MockRateLimiter)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -92,10 +109,13 @@ func TestRateLimitMiddleware(t *testing.T) {
 		apiKey := &model.APIKey{
 			ID:                 1,
 			RateLimitPerMinute: 60,
+			RateLimitPerHour:   1000,
+			RateLimitPerDay:    10000,
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockLimiter.On("CheckLimit", mock.Anything, int64(1), mock.AnythingOfType("string"), int64(60)).Return(false, int64(60), nil)
+		resetAt := time.Now().Add(60 * time.Second)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:60", int64(60), 60).Return(false, int64(0), resetAt, nil)
 
 		middleware := RateLimitMiddleware(mockLimiter, logger)
 		middleware(c)
@@ -105,7 +125,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 		mockLimiter.AssertExpectations(t)
 	})
 
-	t.Run("blocked when over limit", func(t *testing.T) {
+	t.Run("blocked when hour limit exceeded", func(t *testing.T) {
 		mockLimiter := new(MockRateLimiter)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -113,10 +133,14 @@ func TestRateLimitMiddleware(t *testing.T) {
 		apiKey := &model.APIKey{
 			ID:                 1,
 			RateLimitPerMinute: 60,
+			RateLimitPerHour:   1000,
+			RateLimitPerDay:    10000,
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockLimiter.On("CheckLimit", mock.Anything, int64(1), mock.AnythingOfType("string"), int64(60)).Return(false, int64(100), nil)
+		resetAt := time.Now().Add(60 * time.Second)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:60", int64(60), 60).Return(true, int64(10), resetAt, nil)
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:3600", int64(1000), 3600).Return(false, int64(0), resetAt, nil)
 
 		middleware := RateLimitMiddleware(mockLimiter, logger)
 		middleware(c)
@@ -126,7 +150,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 		mockLimiter.AssertExpectations(t)
 	})
 
-	t.Run("continues on check limit error", func(t *testing.T) {
+	t.Run("continues on check window error", func(t *testing.T) {
 		mockLimiter := new(MockRateLimiter)
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -137,28 +161,7 @@ func TestRateLimitMiddleware(t *testing.T) {
 		}
 		c.Set(ContextKeyAPIKey, apiKey)
 
-		mockLimiter.On("CheckLimit", mock.Anything, int64(1), mock.AnythingOfType("string"), int64(60)).Return(false, int64(0), errors.New("redis error"))
-
-		middleware := RateLimitMiddleware(mockLimiter, logger)
-		middleware(c)
-
-		assert.Equal(t, http.StatusOK, w.Code)
-		mockLimiter.AssertExpectations(t)
-	})
-
-	t.Run("continues on increment error", func(t *testing.T) {
-		mockLimiter := new(MockRateLimiter)
-		w := httptest.NewRecorder()
-		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest("GET", "/test", nil)
-		apiKey := &model.APIKey{
-			ID:                 1,
-			RateLimitPerMinute: 60,
-		}
-		c.Set(ContextKeyAPIKey, apiKey)
-
-		mockLimiter.On("CheckLimit", mock.Anything, int64(1), mock.AnythingOfType("string"), int64(60)).Return(true, int64(10), nil)
-		mockLimiter.On("IncrementCounter", mock.Anything, int64(1), mock.AnythingOfType("string"), 60*time.Second).Return(errors.New("redis error"))
+		mockLimiter.On("CheckWindow", mock.Anything, "ratelimit:apikey:1:60", int64(60), 60).Return(false, int64(0), time.Time{}, errors.New("redis error"))
 
 		middleware := RateLimitMiddleware(mockLimiter, logger)
 		middleware(c)

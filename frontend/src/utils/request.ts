@@ -1,9 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import type {
-  AxiosInstance,
-  InternalAxiosRequestConfig,
-  AxiosResponse,
-} from 'axios';
+import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_BASE_URL, TOKEN_KEY } from './constants';
 import type { ApiResponse } from '@/types';
 
@@ -71,18 +67,13 @@ instance.interceptors.response.use(
 export default instance;
 
 export const request = {
-  get: <T = unknown>(url: string, params?: object) =>
-    instance.get<ApiResponse<T>>(url, { params }),
+  get: <T = unknown>(url: string, params?: object) => instance.get<ApiResponse<T>>(url, { params }),
 
-  post: <T = unknown>(url: string, data?: object) =>
-    instance.post<ApiResponse<T>>(url, data),
+  post: <T = unknown>(url: string, data?: object) => instance.post<ApiResponse<T>>(url, data),
 
-  put: <T = unknown>(url: string, data?: object) =>
-    instance.put<ApiResponse<T>>(url, data),
+  put: <T = unknown>(url: string, data?: object) => instance.put<ApiResponse<T>>(url, data),
 
-  delete: <T = unknown>(url: string) =>
-    instance.delete<ApiResponse<T>>(url),
+  delete: <T = unknown>(url: string) => instance.delete<ApiResponse<T>>(url),
 
-  patch: <T = unknown>(url: string, data?: object) =>
-    instance.patch<ApiResponse<T>>(url, data),
+  patch: <T = unknown>(url: string, data?: object) => instance.patch<ApiResponse<T>>(url, data),
 };

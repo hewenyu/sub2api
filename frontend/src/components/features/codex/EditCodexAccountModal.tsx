@@ -29,7 +29,10 @@ export const EditCodexAccountModal: React.FC<EditCodexAccountModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      proxyApi.getProxyNames().then(res => setProxies(res.data.data || [])).catch(() => setProxies([]));
+      proxyApi
+        .getProxyNames()
+        .then((res) => setProxies(res.data.data || []))
+        .catch(() => setProxies([]));
     }
   }, [isOpen]);
 
@@ -77,9 +80,7 @@ export const EditCodexAccountModal: React.FC<EditCodexAccountModalProps> = ({
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email (Read-only)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email (Read-only)</label>
           <Input value={account?.email || ''} readOnly className="bg-gray-50" />
         </div>
 
@@ -95,16 +96,12 @@ export const EditCodexAccountModal: React.FC<EditCodexAccountModalProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Priority
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
           <Input
             type="number"
             min="1"
             value={formData.priority}
-            onChange={(e) =>
-              setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })
-            }
+            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 1 })}
           />
           <p className="text-xs text-gray-500 mt-1">Higher value means higher priority</p>
         </div>
@@ -113,9 +110,7 @@ export const EditCodexAccountModal: React.FC<EditCodexAccountModalProps> = ({
           <input
             type="checkbox"
             checked={formData.schedulable}
-            onChange={(e) =>
-              setFormData({ ...formData, schedulable: e.target.checked })
-            }
+            onChange={(e) => setFormData({ ...formData, schedulable: e.target.checked })}
             className="mr-2"
             id="edit-codex-schedulable"
           />
@@ -130,17 +125,13 @@ export const EditCodexAccountModal: React.FC<EditCodexAccountModalProps> = ({
           </label>
           <Input
             value={formData.proxy_url || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, proxy_url: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, proxy_url: e.target.value })}
             placeholder="http://proxy:8080"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Proxy (Optional)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Proxy (Optional)</label>
           <select
             value={formData.proxy_name || ''}
             onChange={(e) => setFormData({ ...formData, proxy_name: e.target.value || undefined })}

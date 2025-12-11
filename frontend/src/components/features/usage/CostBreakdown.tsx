@@ -96,7 +96,7 @@ export const CostBreakdown: React.FC<CostBreakdownProps> = ({
         y: {
           beginAtZero: true,
           ticks: {
-            callback: (value: any) => `$${value}`,
+            callback: (value: number | string) => `$${value}`,
           },
         },
       },

@@ -52,25 +52,34 @@ export const CodexAccountList: React.FC<CodexAccountListProps> = ({
       width: '25%',
       render: (_value, record) => {
         const displayName = record.name || record.email || 'Unknown';
-        const subLabel = record.email
-          || record.organization_title
-          || record.organization_role
-          || record.organization_id
-          || record.chatgpt_account_id
-          || record.chatgpt_user_id;
+        const subLabel =
+          record.email ||
+          record.organization_title ||
+          record.organization_role ||
+          record.organization_id ||
+          record.chatgpt_account_id ||
+          record.chatgpt_user_id;
         return (
           <div className="flex items-center">
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-4 h-4 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <div className="flex flex-col">
               <span className="font-medium text-gray-900">{displayName}</span>
               {subLabel && subLabel !== displayName && (
-                <span className="text-xs text-gray-500 truncate max-w-xs">
-                  {subLabel}
-                </span>
+                <span className="text-xs text-gray-500 truncate max-w-xs">{subLabel}</span>
               )}
             </div>
           </div>
@@ -110,18 +119,14 @@ export const CodexAccountList: React.FC<CodexAccountListProps> = ({
       key: 'priority',
       title: 'Priority',
       width: '8%',
-      render: (value) => (
-        <span className="text-gray-900">{String(value)}</span>
-      ),
+      render: (value) => <span className="text-gray-900">{String(value)}</span>,
     },
     {
       key: 'last_used_at',
       title: 'Last Used',
       width: '18%',
       render: (value) => (
-        <span className="text-gray-600 text-sm">
-          {formatDate(value as string | null)}
-        </span>
+        <span className="text-gray-600 text-sm">{formatDate(value as string | null)}</span>
       ),
     },
     {

@@ -102,8 +102,7 @@ export const ClaudeAccounts: React.FC = () => {
       message.success('Token refreshed successfully');
       await fetchAccounts();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to refresh token';
+      const errorMessage = error instanceof Error ? error.message : 'Failed to refresh token';
       message.error(errorMessage);
     }
   };
@@ -191,8 +190,8 @@ export const ClaudeAccounts: React.FC = () => {
       >
         <p className="text-gray-700">
           Are you sure you want to delete the Claude account "
-          <span className="font-semibold">{selectedAccount?.email}</span>"? This action
-          cannot be undone.
+          <span className="font-semibold">{selectedAccount?.email}</span>"? This action cannot be
+          undone.
         </p>
       </Modal>
     </div>

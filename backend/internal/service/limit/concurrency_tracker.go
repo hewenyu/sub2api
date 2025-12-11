@@ -10,7 +10,7 @@ import (
 
 // ConcurrencyTracker manages concurrent request tracking for API keys.
 type ConcurrencyTracker interface {
-	Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int) (bool, error)
+	Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int, limit int) (bool, error)
 	Release(ctx context.Context, apiKeyID int64, requestID string) error
 	GetCurrentCount(ctx context.Context, apiKeyID int64) (int64, error)
 	Cleanup(ctx context.Context, apiKeyID int64) error
@@ -32,9 +32,10 @@ func NewConcurrencyTracker(
 	}
 }
 
-// Acquire acquires a concurrency slot for an API key.
-func (t *concurrencyTracker) Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int) (bool, error) {
-	acquired, err := t.concurrencyRepo.Acquire(ctx, apiKeyID, requestID, leaseSeconds)
+// Acquire acquires a concurrency slot for an API key with an explicit limit.
+// The limit is enforced atomically at the Redis layer via Lua scripts.
+func (t *concurrencyTracker) Acquire(ctx context.Context, apiKeyID int64, requestID string, leaseSeconds int, limit int) (bool, error) {
+	acquired, err := t.concurrencyRepo.AcquireWithLimit(ctx, apiKeyID, requestID, limit, leaseSeconds)
 	if err != nil {
 		t.logger.Error("Failed to acquire concurrency slot",
 			zap.Int64("api_key_id", apiKeyID),

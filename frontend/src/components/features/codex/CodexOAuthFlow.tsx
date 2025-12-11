@@ -39,7 +39,10 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
   const [proxies, setProxies] = useState<ProxyNameInfo[]>([]);
 
   useEffect(() => {
-    proxyApi.getProxyNames().then(res => setProxies(res.data.data || [])).catch(() => setProxies([]));
+    proxyApi
+      .getProxyNames()
+      .then((res) => setProxies(res.data.data || []))
+      .catch(() => setProxies([]));
   }, []);
 
   const handleGenerateAuthURL = async () => {
@@ -51,8 +54,9 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
       setCallbackURL(response.callback_url);
       setState(response.state);
       setStep('link');
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate authorization URL';
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : 'Failed to generate authorization URL';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -63,7 +67,7 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
     try {
       await navigator.clipboard.writeText(authURL);
       message.success('Authorization link copied to clipboard');
-    } catch (err) {
+    } catch {
       setError('Failed to copy to clipboard');
     }
   };
@@ -119,7 +123,7 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
       }));
 
       setStep('configure');
-    } catch (err: unknown) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to verify authorization';
       setError(errorMessage);
     } finally {
@@ -153,7 +157,7 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
 
       message.success('Codex account created successfully!');
       onSuccess(updatedAccount);
-    } catch (err: unknown) {
+    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to save account';
       setError(errorMessage);
     } finally {
@@ -268,9 +272,7 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
             <Button variant="ghost" onClick={() => setStep('generate')}>
               Previous
             </Button>
-            <Button onClick={() => setStep('verify')}>
-              Next
-            </Button>
+            <Button onClick={() => setStep('verify')}>Next</Button>
           </div>
         </div>
       )}
@@ -297,19 +299,23 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
 
           <div>
             <label className="block text-sm font-medium mb-2">Or Just the Authorization Code</label>
-            <p className="text-xs text-gray-500">You can paste only the value of the code parameter from the URL</p>
+            <p className="text-xs text-gray-500">
+              You can paste only the value of the code parameter from the URL
+            </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">Proxy Configuration (Optional)</label>
             <select
               value={accountConfig.proxy_name || ''}
-              onChange={(e) => setAccountConfig({ ...accountConfig, proxy_name: e.target.value || undefined })}
+              onChange={(e) =>
+                setAccountConfig({ ...accountConfig, proxy_name: e.target.value || undefined })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">No Proxy (Direct Connection)</option>
               {proxies
-                .filter(proxy => proxy.enabled)
+                .filter((proxy) => proxy.enabled)
                 .map((proxy) => (
                   <option key={proxy.name} value={proxy.name}>
                     {proxy.name} ({proxy.protocol.toUpperCase()})
@@ -317,9 +323,10 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
                 ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Select a proxy if you need to route OAuth requests through a proxy server. Most users can leave this as "No Proxy".
+              Select a proxy if you need to route OAuth requests through a proxy server. Most users
+              can leave this as "No Proxy".
             </p>
-            {proxies.filter(p => p.enabled).length === 0 && (
+            {proxies.filter((p) => p.enabled).length === 0 && (
               <p className="text-xs text-yellow-600 mt-1">
                 No proxies configured. You can add proxies in the Proxy Management page.
               </p>
@@ -342,11 +349,7 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
             <Button variant="ghost" onClick={() => setStep('link')}>
               Previous
             </Button>
-            <Button
-              onClick={handleVerifyAuth}
-              loading={loading}
-              disabled={!authInput || loading}
-            >
+            <Button onClick={handleVerifyAuth} loading={loading} disabled={!authInput || loading}>
               {loading ? 'Verifying...' : 'Verify Authorization'}
             </Button>
           </div>
@@ -392,7 +395,9 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
             <Input
               type="number"
               value={accountConfig.priority}
-              onChange={(e) => setAccountConfig({ ...accountConfig, priority: parseInt(e.target.value) || 100 })}
+              onChange={(e) =>
+                setAccountConfig({ ...accountConfig, priority: parseInt(e.target.value) || 100 })
+              }
               placeholder="100"
             />
             <p className="text-xs text-gray-500 mt-1">Higher value means higher priority</p>
@@ -402,23 +407,29 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
             <input
               type="checkbox"
               checked={accountConfig.schedulable}
-              onChange={(e) => setAccountConfig({ ...accountConfig, schedulable: e.target.checked })}
+              onChange={(e) =>
+                setAccountConfig({ ...accountConfig, schedulable: e.target.checked })
+              }
               className="mr-2"
               id="schedulable"
             />
-            <label htmlFor="schedulable" className="text-sm font-medium">Schedulable</label>
+            <label htmlFor="schedulable" className="text-sm font-medium">
+              Schedulable
+            </label>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-2">Proxy Configuration (Optional)</label>
             <select
               value={accountConfig.proxy_name || ''}
-              onChange={(e) => setAccountConfig({ ...accountConfig, proxy_name: e.target.value || undefined })}
+              onChange={(e) =>
+                setAccountConfig({ ...accountConfig, proxy_name: e.target.value || undefined })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">No Proxy (Direct Connection)</option>
               {proxies
-                .filter(proxy => proxy.enabled)
+                .filter((proxy) => proxy.enabled)
                 .map((proxy) => (
                   <option key={proxy.name} value={proxy.name}>
                     {proxy.name} ({proxy.protocol.toUpperCase()})
@@ -426,9 +437,10 @@ export const CodexOAuthFlow: React.FC<CodexOAuthFlowProps> = ({ onSuccess, onCan
                 ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Select a proxy if you need to route OAuth requests through a proxy server. Most users can leave this as "No Proxy".
+              Select a proxy if you need to route OAuth requests through a proxy server. Most users
+              can leave this as "No Proxy".
             </p>
-            {proxies.filter(p => p.enabled).length === 0 && (
+            {proxies.filter((p) => p.enabled).length === 0 && (
               <p className="text-xs text-yellow-600 mt-1">
                 No proxies configured. You can add proxies in the Proxy Management page.
               </p>

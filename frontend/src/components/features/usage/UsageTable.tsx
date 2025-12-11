@@ -78,11 +78,21 @@ export const UsageTable: React.FC<UsageTableProps> = ({
   const startIndex = (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, total);
 
-  const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
+  const renderSortIcon = (field: SortField) => {
     if (sortField !== field) {
       return (
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        <svg
+          className="w-4 h-4 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
         </svg>
       );
     }
@@ -118,7 +128,10 @@ export const UsageTable: React.FC<UsageTableProps> = ({
   }
 
   return (
-    <Card title="Usage Records" description={`Showing ${startIndex}-${endIndex} of ${total} records`}>
+    <Card
+      title="Usage Records"
+      description={`Showing ${startIndex}-${endIndex} of ${total} records`}
+    >
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -129,7 +142,7 @@ export const UsageTable: React.FC<UsageTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   Time
-                  <SortIcon field="timestamp" />
+                  {renderSortIcon('timestamp')}
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -147,7 +160,7 @@ export const UsageTable: React.FC<UsageTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   Input Tokens
-                  <SortIcon field="input_tokens" />
+                  {renderSortIcon('input_tokens')}
                 </div>
               </th>
               <th
@@ -156,7 +169,7 @@ export const UsageTable: React.FC<UsageTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   Output Tokens
-                  <SortIcon field="output_tokens" />
+                  {renderSortIcon('output_tokens')}
                 </div>
               </th>
               <th
@@ -165,7 +178,7 @@ export const UsageTable: React.FC<UsageTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   Cost
-                  <SortIcon field="cost" />
+                  {renderSortIcon('cost')}
                 </div>
               </th>
             </tr>

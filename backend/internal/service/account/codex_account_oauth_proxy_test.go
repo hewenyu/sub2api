@@ -89,4 +89,3 @@ func TestGetHTTPClientWithProxyName(t *testing.T) {
 		assert.Equal(t, defaultClient, client)
 	})
 }
-

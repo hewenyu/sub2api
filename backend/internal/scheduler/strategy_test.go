@@ -221,3 +221,51 @@ func TestRoundRobinStrategy_Select(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), selected4.ID)
 }
+
+func TestNewStrategy_Priority(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy(StrategyTypePriority, concurrencyRepo)
+	require.NoError(t, err)
+	assert.NotNil(t, strategy)
+	assert.IsType(t, &PriorityStrategy{}, strategy)
+}
+
+func TestNewStrategy_RoundRobin(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy(StrategyTypeRoundRobin, concurrencyRepo)
+	require.NoError(t, err)
+	assert.NotNil(t, strategy)
+	assert.IsType(t, &RoundRobinStrategy{}, strategy)
+}
+
+func TestNewStrategy_Weighted(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy(StrategyTypeWeighted, concurrencyRepo)
+	require.NoError(t, err)
+	assert.NotNil(t, strategy)
+	assert.IsType(t, &WeightedRoundRobinStrategy{}, strategy)
+}
+
+func TestNewStrategy_HealthAware(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy(StrategyTypeHealthAware, concurrencyRepo)
+	require.NoError(t, err)
+	assert.NotNil(t, strategy)
+	assert.IsType(t, &HealthAwareStrategy{}, strategy)
+}
+
+func TestNewStrategy_ConsistentHash(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy(StrategyTypeConsistentHash, concurrencyRepo)
+	require.NoError(t, err)
+	assert.NotNil(t, strategy)
+	assert.IsType(t, &ConsistentHashStrategy{}, strategy)
+}
+
+func TestNewStrategy_Unknown(t *testing.T) {
+	concurrencyRepo, _ := setupTestConcurrencyRepo(t)
+	strategy, err := NewStrategy("unknown", concurrencyRepo)
+	assert.Error(t, err)
+	assert.Nil(t, strategy)
+	assert.Contains(t, err.Error(), "unknown strategy type")
+}

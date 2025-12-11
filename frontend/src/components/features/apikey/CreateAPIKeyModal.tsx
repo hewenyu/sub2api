@@ -63,7 +63,7 @@ export const CreateAPIKeyModal: React.FC<CreateAPIKeyModalProps> = ({
         enable_client_restriction: false,
         allowed_clients: [],
       });
-    } catch (error) {
+    } catch {
       // Error already handled in hook
     } finally {
       setLoading(false);
@@ -129,9 +129,7 @@ export const CreateAPIKeyModal: React.FC<CreateAPIKeyModalProps> = ({
 
         {/* Rate Limits */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Rate Limits
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Rate Limits</label>
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">Per Minute</label>
@@ -183,9 +181,7 @@ export const CreateAPIKeyModal: React.FC<CreateAPIKeyModalProps> = ({
 
         {/* Cost Limits */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Cost Limits (USD)
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cost Limits (USD)</label>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-600 mb-1">Daily Limit</label>
@@ -271,9 +267,7 @@ export const CreateAPIKeyModal: React.FC<CreateAPIKeyModalProps> = ({
               }
               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
-              Enable Model Restrictions
-            </span>
+            <span className="text-sm font-medium text-gray-700">Enable Model Restrictions</span>
           </label>
           {formData.enable_model_restriction && (
             <div className="mt-2">

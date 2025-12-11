@@ -107,3 +107,32 @@ func (s *RoundRobinStrategy) Select(ctx context.Context, candidates []*model.Cod
 
 	return selected, nil
 }
+
+// StrategyType represents the type of selection strategy.
+type StrategyType string
+
+const (
+	StrategyTypePriority       StrategyType = "priority"
+	StrategyTypeRoundRobin     StrategyType = "round-robin"
+	StrategyTypeWeighted       StrategyType = "weighted"
+	StrategyTypeHealthAware    StrategyType = "health-aware"
+	StrategyTypeConsistentHash StrategyType = "consistent-hash"
+)
+
+// NewStrategy creates a new selection strategy based on the given type.
+func NewStrategy(strategyType StrategyType, concurrencyRepo redis.ConcurrencyRepository) (SelectionStrategy, error) {
+	switch strategyType {
+	case StrategyTypePriority:
+		return NewPriorityStrategy(concurrencyRepo), nil
+	case StrategyTypeRoundRobin:
+		return NewRoundRobinStrategy(), nil
+	case StrategyTypeWeighted:
+		return NewWeightedRoundRobinStrategy(), nil
+	case StrategyTypeHealthAware:
+		return NewHealthAwareStrategy(concurrencyRepo), nil
+	case StrategyTypeConsistentHash:
+		return NewConsistentHashStrategy(), nil
+	default:
+		return nil, fmt.Errorf("unknown strategy type: %s", strategyType)
+	}
+}

@@ -83,7 +83,7 @@ export const Usage: React.FC = () => {
       setError(null);
 
       const data = await usageApi.getRecords(filters, currentPage, pageSize);
-      const transformedRecords: UsageRecord[] = (data.items || []).map((item: any) => ({
+      const transformedRecords: UsageRecord[] = (data.items || []).map((item) => ({
         id: item.id,
         timestamp: item.created_at || item.timestamp,
         api_key_name: item.api_key_name,
@@ -127,9 +127,7 @@ export const Usage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Usage Statistics</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Comprehensive usage analytics and reports
-          </p>
+          <p className="mt-1 text-sm text-gray-600">Comprehensive usage analytics and reports</p>
         </div>
         <ExportButton filters={filters} records={records} disabled={isLoadingRecords} />
       </div>
@@ -149,16 +147,8 @@ export const Usage: React.FC = () => {
           <UsageSummary stats={stats} isLoading={isLoadingStats} />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CostBreakdown
-              byModel={byModel}
-              type="model"
-              isLoading={isLoadingStats}
-            />
-            <CostBreakdown
-              byKey={byKey}
-              type="key"
-              isLoading={isLoadingStats}
-            />
+            <CostBreakdown byModel={byModel} type="model" isLoading={isLoadingStats} />
+            <CostBreakdown byKey={byKey} type="key" isLoading={isLoadingStats} />
           </div>
 
           <UsageChart data={dailyUsage} isLoading={isLoadingStats} />
