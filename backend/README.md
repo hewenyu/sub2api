@@ -74,7 +74,6 @@ docker-compose up -d
 This will start:
 - PostgreSQL 15 on port 5432
 - Redis 7 on port 6379
-- Backend API on port 8080
 
 ## Development
 
