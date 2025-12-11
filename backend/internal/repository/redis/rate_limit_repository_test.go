@@ -172,13 +172,13 @@ func TestRateLimitRepository_CheckAndIncrement(t *testing.T) {
 	assert.True(t, resetAt.After(time.Now()))
 
 	// Second request - should be allowed
-	allowed, remaining, resetAt, err = repo.CheckAndIncrement(ctx, key, limit, windowSeconds)
+	allowed, remaining, _, err = repo.CheckAndIncrement(ctx, key, limit, windowSeconds)
 	require.NoError(t, err)
 	assert.True(t, allowed)
 	assert.Equal(t, int64(1), remaining)
 
 	// Third request - should be allowed
-	allowed, remaining, resetAt, err = repo.CheckAndIncrement(ctx, key, limit, windowSeconds)
+	allowed, remaining, _, err = repo.CheckAndIncrement(ctx, key, limit, windowSeconds)
 	require.NoError(t, err)
 	assert.True(t, allowed)
 	assert.Equal(t, int64(0), remaining)

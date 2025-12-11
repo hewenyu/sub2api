@@ -40,8 +40,8 @@ func (rm *retryManager) Do(ctx context.Context, fn func() error) error {
 		lastErr = err
 
 		// Check context after first attempt
-		if err := ctx.Err(); err != nil {
-			return err
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
 		}
 
 		// Check if error is retryable
@@ -83,8 +83,8 @@ func (rm *retryManager) DoWithFailover(ctx context.Context, fn func(accountID in
 		lastErr = err
 
 		// Check context after first attempt
-		if err := ctx.Err(); err != nil {
-			return err
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
 		}
 
 		// Check if error is retryable

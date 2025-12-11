@@ -49,7 +49,7 @@ func (w *Watcher) watch() {
 		w.logger.Error("Failed to create file watcher", zap.Error(err))
 		return
 	}
-	defer watcher.Close()
+	defer func() { _ = watcher.Close() }()
 
 	if err := watcher.Add(w.configPath); err != nil {
 		w.logger.Error("Failed to watch config file", zap.Error(err))

@@ -37,8 +37,8 @@ func main() {
 	}
 
 	validator := config.NewValidator()
-	if err := validator.Validate(cfg); err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid configuration: %v\n", err)
+	if validateErr := validator.Validate(cfg); validateErr != nil {
+		fmt.Fprintf(os.Stderr, "Invalid configuration: %v\n", validateErr)
 		os.Exit(1)
 	}
 

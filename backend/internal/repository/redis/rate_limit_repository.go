@@ -123,12 +123,12 @@ func (r *rateLimitRepository) CheckAndIncrement(ctx context.Context, key string,
 		return false, 0, time.Time{}, fmt.Errorf("unexpected script result format")
 	}
 
-	allowed := resultSlice[0].(int64) == 1
-	remaining := resultSlice[1].(int64)
-	resetAtUnix := resultSlice[2].(int64)
+	allowedVal, _ := resultSlice[0].(int64)
+	remaining, _ := resultSlice[1].(int64)
+	resetAtUnix, _ := resultSlice[2].(int64)
 	resetAt := time.Unix(resetAtUnix, 0)
 
-	return allowed, remaining, resetAt, nil
+	return allowedVal == 1, remaining, resetAt, nil
 }
 
 // GetInfo returns rate limit information without incrementing.

@@ -118,8 +118,8 @@ func (h *healthChecker) checkAccount(ctx context.Context, account *model.CodexAc
 
 	success := h.performCheck(checkCtx, account)
 
-	if err := h.healthRepo.UpdateMetrics(ctx, account.ID, success); err != nil {
-		return fmt.Errorf("failed to update metrics: %w", err)
+	if updateErr := h.healthRepo.UpdateMetrics(ctx, account.ID, success); updateErr != nil {
+		return fmt.Errorf("failed to update metrics: %w", updateErr)
 	}
 
 	metrics, err := h.healthRepo.GetMetrics(ctx, account.ID)
@@ -161,7 +161,7 @@ func (h *healthChecker) performCheck(ctx context.Context, account *model.CodexAc
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return resp.StatusCode == http.StatusOK
 }

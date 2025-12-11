@@ -33,8 +33,8 @@ func TestAtomicity_NoRaceConditions(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", id), limit, ttl)
-			require.NoError(t, err)
+			acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", id), limit, ttl)
+			require.NoError(t, acquireErr)
 			if acquired {
 				successCount.Add(1)
 			} else {
@@ -66,8 +66,8 @@ func TestAtomicity_ZombieLockPrevention(t *testing.T) {
 	shortTTL := 1
 
 	for i := 0; i < limit; i++ {
-		acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("zombie-%d", i), limit, shortTTL)
-		require.NoError(t, err)
+		acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("zombie-%d", i), limit, shortTTL)
+		require.NoError(t, acquireErr)
 		assert.True(t, acquired)
 	}
 
@@ -78,8 +78,8 @@ func TestAtomicity_ZombieLockPrevention(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	for i := 0; i < limit; i++ {
-		acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("new-%d", i), limit, 300)
-		require.NoError(t, err)
+		acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("new-%d", i), limit, 300)
+		require.NoError(t, acquireErr)
 		assert.True(t, acquired)
 	}
 
@@ -102,8 +102,8 @@ func TestAtomicity_ConcurrentReleaseAndAcquire(t *testing.T) {
 	iterations := 100
 
 	for i := 0; i < limit; i++ {
-		acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("initial-%d", i), limit, ttl)
-		require.NoError(t, err)
+		acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("initial-%d", i), limit, ttl)
+		require.NoError(t, acquireErr)
 		assert.True(t, acquired)
 	}
 
@@ -120,8 +120,8 @@ func TestAtomicity_ConcurrentReleaseAndAcquire(t *testing.T) {
 
 		go func(id int) {
 			defer wg.Done()
-			acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("new-%d", id), limit, ttl)
-			if err == nil && acquired {
+			acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("new-%d", id), limit, ttl)
+			if acquireErr == nil && acquired {
 				successCount.Add(1)
 			}
 		}(i)
@@ -158,8 +158,8 @@ func TestAtomicity_HighConcurrencyStressTest(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("stress-%d", id), limit, ttl)
-			if err == nil && acquired {
+			acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("stress-%d", id), limit, ttl)
+			if acquireErr == nil && acquired {
 				successCount.Add(1)
 			}
 		}(i)

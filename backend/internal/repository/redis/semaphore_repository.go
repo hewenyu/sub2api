@@ -43,8 +43,8 @@ func (r *semaphoreRepository) Acquire(ctx context.Context, key string, requestID
 		return false, fmt.Errorf("acquire semaphore failed: %w", err)
 	}
 
-	acquired := result.(int64) == 1
-	return acquired, nil
+	acquiredVal, _ := result.(int64)
+	return acquiredVal == 1, nil
 }
 
 func (r *semaphoreRepository) Release(ctx context.Context, key string, requestID string) error {
@@ -72,6 +72,6 @@ func (r *semaphoreRepository) GetCount(ctx context.Context, key string) (int, er
 		return 0, fmt.Errorf("get semaphore count failed: %w", err)
 	}
 
-	count := int(result.(int64))
-	return count, nil
+	countVal, _ := result.(int64)
+	return int(countVal), nil
 }
