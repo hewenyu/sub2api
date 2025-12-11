@@ -82,13 +82,15 @@ func (m *LuaScriptManager) EvalSHA(ctx context.Context, name string, keys []stri
 		return nil, fmt.Errorf("script %s not loaded", name)
 	}
 
-	result, err := m.client.EvalSha(ctx, sha.(string), keys, args...).Result()
+	shaStr, _ := sha.(string)
+	result, err := m.client.EvalSha(ctx, shaStr, keys, args...).Result()
 	if err != nil && strings.Contains(err.Error(), "NOSCRIPT") {
 		if loadErr := m.LoadScripts(ctx); loadErr != nil {
 			return nil, loadErr
 		}
 		sha, _ = m.shas.Load(name)
-		result, err = m.client.EvalSha(ctx, sha.(string), keys, args...).Result()
+		shaStr, _ = sha.(string)
+		result, err = m.client.EvalSha(ctx, shaStr, keys, args...).Result()
 	}
 
 	return result, err

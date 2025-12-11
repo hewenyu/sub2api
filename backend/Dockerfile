@@ -1,7 +1,7 @@
 # Multi-stage build for Claude Relay Go Backend
 
 # Stage 1: Builder
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-w -s" \
     -o server \
-    cmd/server/main.go
+    ./cmd/server
 
 # Stage 2: Runtime
 FROM alpine:latest

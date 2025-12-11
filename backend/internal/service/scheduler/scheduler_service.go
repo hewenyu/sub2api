@@ -164,11 +164,11 @@ func (s *schedulerService) SelectCodexAccount(ctx context.Context, apiKey *model
 	// Filter out quarantined accounts
 	var healthyCandidates []*model.CodexAccount
 	for _, candidate := range candidates {
-		quarantined, err := s.healthRepo.IsQuarantined(ctx, candidate.ID)
-		if err != nil {
+		quarantined, checkErr := s.healthRepo.IsQuarantined(ctx, candidate.ID)
+		if checkErr != nil {
 			s.logger.Warn("Failed to check quarantine status",
 				zap.Int64("account_id", candidate.ID),
-				zap.Error(err),
+				zap.Error(checkErr),
 			)
 			continue
 		}

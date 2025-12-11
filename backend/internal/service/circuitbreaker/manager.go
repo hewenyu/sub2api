@@ -33,8 +33,8 @@ func (m *Manager) GetBreaker(accountType string, accountID int64) *CircuitBreake
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if cb, exists := m.breakers[key]; exists {
-		return cb
+	if existingCb, exists := m.breakers[key]; exists {
+		return existingCb
 	}
 
 	cb = New()

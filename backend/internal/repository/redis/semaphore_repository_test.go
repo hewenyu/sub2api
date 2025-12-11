@@ -46,8 +46,8 @@ func TestSemaphoreRepository_Acquire_LimitEnforcement(t *testing.T) {
 	ttl := 300
 
 	for i := 0; i < limit; i++ {
-		acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", i), limit, ttl)
-		require.NoError(t, err)
+		acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", i), limit, ttl)
+		require.NoError(t, acquireErr)
 		assert.True(t, acquired)
 	}
 
@@ -132,8 +132,8 @@ func TestSemaphoreRepository_ConcurrentAcquire(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			acquired, err := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", id), limit, ttl)
-			if err == nil && acquired {
+			acquired, acquireErr := repo.Acquire(ctx, key, fmt.Sprintf("req-%d", id), limit, ttl)
+			if acquireErr == nil && acquired {
 				mu.Lock()
 				successCount++
 				mu.Unlock()
