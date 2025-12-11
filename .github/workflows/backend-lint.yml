@@ -30,7 +30,6 @@ jobs:
         with:
           version: latest
           working-directory: backend
-          args: --version
 
       - name: Run lint
         run: make lint
