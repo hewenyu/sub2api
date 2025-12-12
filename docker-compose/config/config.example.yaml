@@ -33,8 +33,8 @@ redis:
 # Security Configuration
 # Authentication and encryption settings
 security:
-  jwt_secret: "CHANGE-THIS-TO-A-SECURE-RANDOM-STRING"  # JWT signing secret (min: 32 chars, required)
-  encryption_key: "CHANGE-THIS-TO-32-CHAR-STRING!!"    # AES-256 encryption key (exactly 32 chars, required)
+  jwt_secret: "6037157e95f37834a29edff982285688"  # JWT signing secret (min: 32 chars, required)  openssl rand -hex 16
+  encryption_key: "6037157e95f37834a29edff982285688"    # AES-256 encryption key (exactly 32 chars, required)
   token_expiration: "24h"                               # JWT token expiration (min: 1h, required)
 
 claude:
