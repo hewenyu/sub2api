@@ -1,0 +1,9 @@
+# Environment files
+.env
+
+# Config files (contain sensitive data)
+config/config.yaml
+config/model_prices_and_context_window.json
+
+# Keep example files
+!config/*.example.*

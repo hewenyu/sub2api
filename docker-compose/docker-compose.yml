@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: relay-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-relay}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-relay123}
+      POSTGRES_DB: ${DB_NAME:-claude_relay}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-relay} -d ${DB_NAME:-claude_relay}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - relay-network
+
+  init:
+    image: hewenyulucky/claude-relay:init
+    container_name: relay-init
+    environment:
+      RELAY_DATABASE_HOST: postgres
+      RELAY_DATABASE_PORT: 5432
+      RELAY_DATABASE_USER: ${DB_USER:-relay}
+      RELAY_DATABASE_PASSWORD: ${DB_PASSWORD:-relay123}
+      RELAY_DATABASE_DATABASE: ${DB_NAME:-claude_relay}
+      RELAY_DATABASE_SSL_MODE: disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - relay-network
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: relay-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - relay-network
+
+  backend:
+    image: hewenyulucky/claude-relay:backend
+    container_name: relay-backend
+    environment:
+      RELAY_SERVER_HOST: 0.0.0.0
+      RELAY_SERVER_PORT: 8080
+      RELAY_SERVER_MODE: ${SERVER_MODE:-release}
+      RELAY_DATABASE_HOST: postgres
+      RELAY_DATABASE_PORT: 5432
+      RELAY_DATABASE_USER: ${DB_USER:-relay}
+      RELAY_DATABASE_PASSWORD: ${DB_PASSWORD:-relay123}
+      RELAY_DATABASE_DATABASE: ${DB_NAME:-claude_relay}
+      RELAY_DATABASE_SSL_MODE: disable
+      RELAY_REDIS_HOST: redis
+      RELAY_REDIS_PORT: 6379
+      RELAY_REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      RELAY_SECURITY_JWT_SECRET: ${JWT_SECRET}
+      RELAY_SECURITY_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      RELAY_SECURITY_TOKEN_EXPIRATION: ${TOKEN_EXPIRATION:-24h}
+      RELAY_CLAUDE_CLIENT_ID: ${CLAUDE_CLIENT_ID}
+      RELAY_CLAUDE_CLIENT_SECRET: ${CLAUDE_CLIENT_SECRET}
+      RELAY_CLAUDE_REDIRECT_URI: ${CLAUDE_REDIRECT_URI}
+      RELAY_CODEX_OAUTH_CLIENT_ID: ${CODEX_CLIENT_ID:-app_EMoamEEZ73f0CkXaXp7hrann}
+      RELAY_CODEX_OAUTH_CLIENT_SECRET: ${CODEX_CLIENT_SECRET}
+      RELAY_LOGGING_LEVEL: ${LOG_LEVEL:-info}
+      RELAY_LOGGING_FORMAT: json
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - ./config/config.yaml:/app/config/config.yaml
+      - ./config/model_prices_and_context_window.json:/app/config/model_prices_and_context_window.json
+    depends_on:
+      init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - relay-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    image: hewenyulucky/claude-relay:frontend
+    container_name: relay-frontend
+    environment:
+      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - relay-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  relay-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,4 +1,4 @@
-name: Backend Docker
+name: Init Docker
 
 on:
   push:
