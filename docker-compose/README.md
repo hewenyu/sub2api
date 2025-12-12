@@ -122,6 +122,16 @@ These files are mounted as volumes and can be updated without rebuilding the con
 docker-compose restart backend
 ```
 
+For local调试（更详细日志），你也可以使用提供的 `config.debug.yaml` 作为模板：
+
+```bash
+cd config
+cp config.debug.yaml config.yaml
+```
+
+`config.example.yaml` 默认将日志写入容器内的 `./logs/claude_relay.log` 和 `./logs/claude_relay_error.log` 文件；
+`config.debug.yaml` 默认将日志写入容器内的 `./logs/claude_relay_debug.log` 和 `./logs/claude_relay_debug_error.log` 文件，并开启更详细的 debug 日志和 payload 日志。
+
 ## Data Persistence
 
 Data is persisted in Docker volumes:

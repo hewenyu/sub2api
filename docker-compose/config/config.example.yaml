@@ -72,8 +72,8 @@ billing:
 logging:
   level: "info"                      # Log level: debug, info, warn, error (required)
   format: "json"                     # Log format: json, console (required)
-  output_path: "stdout"              # Log output: stdout or file path (required)
-  error_output_path: "stderr"        # Error log output: stderr or file path (required)
+  output_path: "./logs/claude_relay.log"          # Log output: file path inside container
+  error_output_path: "./logs/claude_relay_error.log"  # Error log output: file path inside container
   log_payloads: false                # Log request/response payloads (disable in production)
 
 metrics:
