@@ -41,13 +41,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: relay-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +70,7 @@ services:
       RELAY_DATABASE_SSL_MODE: disable
       RELAY_REDIS_HOST: redis
       RELAY_REDIS_PORT: 6379
-      RELAY_REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      RELAY_REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
       RELAY_SECURITY_JWT_SECRET: ${JWT_SECRET}
       RELAY_SECURITY_ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       RELAY_SECURITY_TOKEN_EXPIRATION: ${TOKEN_EXPIRATION:-24h}

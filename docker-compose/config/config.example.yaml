@@ -26,7 +26,7 @@ database:
 redis:
   host: "localhost"            # Redis host (required)
   port: 6379                   # Redis port (1-65535, required)
-  password: ""                 # Redis password (optional, leave empty if no password)
+  password: "redis123"         # Redis password (optional, leave empty if no password)
   db: 0                        # Redis database (0-15)
   pool_size: 100               # Connection pool size (1-1000)
 
