@@ -111,8 +111,6 @@ services:
   frontend:
     image: hewenyulucky/claude-relay:frontend
     container_name: relay-frontend
-    environment:
-      VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:8080}
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:

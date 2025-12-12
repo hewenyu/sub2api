@@ -102,10 +102,14 @@ npm run preview
 
 ## Environment Variables
 
-Create a `.env` file in the frontend directory:
+Create a `.env` file in the frontend directory (optional, if you want to override the default `/api/v1`):
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080/api
+# Typical local dev: go through Vite proxy to backend
+VITE_API_BASE_URL=/api/v1
+
+# Or direct to backend if you prefer
+# VITE_API_BASE_URL=http://localhost:8080/api/v1
 ```
 
 ## Features Implemented
