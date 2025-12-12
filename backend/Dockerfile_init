@@ -1,0 +1,16 @@
+FROM golang:1.24-alpine
+
+WORKDIR /init
+
+RUN apk add --no-cache postgresql-client curl && \
+    curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.1/migrate.linux-amd64.tar.gz | tar xvz && \
+    mv migrate /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
+
+COPY scripts/ /init/
+COPY migrations /init/migrations
+
+RUN chmod +x /init/migrate.sh
+RUN chmod +x /init/wait-for-postgres.sh
+
+CMD ["/init/wait-for-postgres.sh"]

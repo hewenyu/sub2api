@@ -1,0 +1,97 @@
+# Server Configuration
+# HTTP server settings for the Claude Relay service
+server:
+  host: "0.0.0.0"              # Bind address (0.0.0.0 for all interfaces)
+  port: 8080                   # HTTP server port (1-65535)
+  mode: "release"              # Gin mode: debug, release, test
+  read_timeout: "60s"          # Request read timeout (min: 1s)
+  write_timeout: "60s"         # Response write timeout (min: 1s)
+
+# Database Configuration
+# PostgreSQL database connection settings
+database:
+  host: "localhost"            # PostgreSQL host (required)
+  port: 5432                   # PostgreSQL port (1-65535, required)
+  user: "relay"                # Database user (required)
+  password: "your-database-password"  # Database password (required)
+  database: "claude_relay"     # Database name (required)
+  ssl_mode: "disable"          # SSL mode: disable, require, verify-ca, verify-full (required)
+  max_open_conns: 25           # Maximum open connections (1-1000)
+  max_idle_conns: 10           # Maximum idle connections (1-100, must be <= max_open_conns)
+  conn_max_lifetime: "5m"      # Connection max lifetime (required)
+  conn_max_idle_time: "10m"    # Connection max idle time (required)
+
+# Redis Configuration
+# Redis connection settings for caching and session management
+redis:
+  host: "localhost"            # Redis host (required)
+  port: 6379                   # Redis port (1-65535, required)
+  password: ""                 # Redis password (optional, leave empty if no password)
+  db: 0                        # Redis database (0-15)
+  pool_size: 100               # Connection pool size (1-1000)
+
+# Security Configuration
+# Authentication and encryption settings
+security:
+  jwt_secret: "CHANGE-THIS-TO-A-SECURE-RANDOM-STRING"  # JWT signing secret (min: 32 chars, required)
+  encryption_key: "CHANGE-THIS-TO-32-CHAR-STRING!!"    # AES-256 encryption key (exactly 32 chars, required)
+  token_expiration: "24h"                               # JWT token expiration (min: 1h, required)
+
+claude:
+  client_id: "your-claude-oauth-client-id"
+  client_secret: "your-claude-oauth-client-secret"
+  redirect_uri: "http://localhost:3000/callback"
+  base_api: "https://api.claude.ai"
+  auth_url: "https://accounts.claude.ai/oauth2/authorize"
+  token_url: "https://accounts.claude.ai/oauth2/token"
+
+codex:
+  base_api: "https://api.openai.com"
+  # OAuth configuration - Uses official Codex CLI CLIENT_ID (public OAuth client)
+  oauth:
+    client_id: "app_EMoamEEZ73f0CkXaXp7hrann"  # Official Codex CLI CLIENT_ID
+    client_secret: ""  # Not required for public OAuth clients
+    auth_url: "https://auth.openai.com/oauth/authorize"
+    token_url: "https://auth.openai.com/oauth/token"
+    scopes: "openid profile email offline_access"
+
+# Limits Configuration
+# Default rate limiting and concurrency settings
+limits:
+  default_concurrent_requests: 10    # Default concurrent requests (1-1000)
+  default_rate_limit_per_minute: 60  # Default rate limit per minute (min: 1)
+  default_rate_limit_per_hour: 3600  # Default rate limit per hour (min: 1)
+  default_rate_limit_per_day: 86400  # Default rate limit per day (min: 1)
+
+billing:
+  pricing_url: "https://www.anthropic.com/api/pricing"
+  update_interval: "24h"
+
+# Logging Configuration
+# Structured logging settings
+logging:
+  level: "info"                      # Log level: debug, info, warn, error (required)
+  format: "json"                     # Log format: json, console (required)
+  output_path: "stdout"              # Log output: stdout or file path (required)
+  error_output_path: "stderr"        # Error log output: stderr or file path (required)
+  log_payloads: false                # Log request/response payloads (disable in production)
+
+metrics:
+  enabled: true
+  port: 9090
+  path: "/metrics"
+
+# Scheduler Configuration
+# Account selection and session management settings
+scheduler:
+  strategy: "weighted"               # Strategy: priority, round_robin, weighted, consistent_hash, health_aware (required)
+  session_ttl: "1h"                  # Sticky session TTL (min: 1m, required)
+
+# Retry Configuration
+# Smart retry logic with exponential backoff
+retry:
+  max_attempts: 3                    # Maximum retry attempts
+  initial_backoff: "100ms"           # Initial backoff duration
+  max_backoff: "5s"                  # Maximum backoff duration
+  multiplier: 2.0                    # Backoff multiplier
+  jitter: 0.1                        # Jitter factor (0.0-1.0)
