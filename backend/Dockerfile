@@ -21,6 +21,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o server \
     ./cmd/server
 
+# Build admin tool
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s" \
+    -o createadmin \
+    ./cmd/createadmin
+
 # Stage 2: Runtime
 FROM alpine:latest
 
@@ -35,10 +41,12 @@ RUN addgroup -g 1000 appuser && \
 
 # Copy binary from builder
 COPY --from=builder /app/server /app/server
+COPY --from=builder /app/createadmin /app/createadmin
 
 # Copy configuration and migrations
-COPY --from=builder /app/config /app/config
-COPY --from=builder /app/migrations /app/migrations
+COPY --from=builder /app/config/*.yaml /app/config/
+COPY --from=builder /app/config/*.json /app/config/
+# COPY --from=builder /app/migrations /app/migrations
 
 # Change ownership
 RUN chown -R appuser:appuser /app

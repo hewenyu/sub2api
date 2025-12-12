@@ -10,7 +10,7 @@ server:
 # Database Configuration
 # PostgreSQL database connection settings
 database:
-  host: "localhost"            # PostgreSQL host (required)
+  host: "postgres"             # PostgreSQL host (Docker: service name 'postgres')
   port: 5432                   # PostgreSQL port (1-65535, required)
   user: "relay"                # Database user (required)
   password: "your-database-password"  # Database password (required)
@@ -24,7 +24,7 @@ database:
 # Redis Configuration
 # Redis connection settings for caching and session management
 redis:
-  host: "localhost"            # Redis host (required)
+  host: "redis"                # Redis host (Docker: service name 'redis')
   port: 6379                   # Redis port (1-65535, required)
   password: "redis123"         # Redis password (optional, leave empty if no password)
   db: 0                        # Redis database (0-15)
