@@ -29,6 +29,13 @@ CODEX_CLIENT_SECRET=your-codex-client-secret
 cd config
 cp config.example.yaml config.yaml
 cp model_prices_and_context_window.example.json model_prices_and_context_window.json
+cd ..
+
+# Prepare logs directory (make sure container user can write)
+mkdir -p logs
+# backend 容器使用非 root 用户 (UID=1000)，确保 logs 目录可写：
+sudo chown 1000:1000 logs || true
+chmod 755 logs
 ```
 
 Edit `config/config.yaml` with your settings. The config files will be mounted into the backend container.
