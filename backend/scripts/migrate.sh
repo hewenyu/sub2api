@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # migrate.sh - Database migration script using golang-migrate
 
@@ -38,7 +38,7 @@ usage() {
 }
 
 # Check if golang-migrate is installed
-if ! command -v migrate &> /dev/null; then
+if ! command -v migrate >/dev/null 2>&1; then
     echo "Error: golang-migrate is not installed"
     echo "Please install it with:"
     echo "  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
@@ -67,14 +67,18 @@ case "$COMMAND" in
             migrate -path "$MIGRATIONS_DIR" -database "$DATABASE_URL" down "$STEPS"
         else
             echo "Warning: This will rollback ALL migrations!"
-            read -p "Are you sure? (yes/no) " -r
+            printf "Are you sure? (yes/no) "
+            IFS= read -r REPLY
             echo
-            if [[ $REPLY =~ ^[Yy]es$ ]]; then
-                migrate -path "$MIGRATIONS_DIR" -database "$DATABASE_URL" down
-            else
-                echo "Cancelled"
-                exit 0
-            fi
+            case "$REPLY" in
+                [Yy]es)
+                    migrate -path "$MIGRATIONS_DIR" -database "$DATABASE_URL" down
+                    ;;
+                *)
+                    echo "Cancelled"
+                    exit 0
+                    ;;
+            esac
         fi
         echo "Migrations rolled back successfully"
         ;;
@@ -93,7 +97,8 @@ case "$COMMAND" in
         ;;
     drop)
         echo "Warning: This will DROP ALL database objects!"
-        read -p "Are you sure? Type 'DROP' to confirm: " -r
+        printf "Are you sure? Type 'DROP' to confirm: "
+        IFS= read -r REPLY
         echo
         if [ "$REPLY" = "DROP" ]; then
             migrate -path "$MIGRATIONS_DIR" -database "$DATABASE_URL" drop
