@@ -66,7 +66,16 @@ func NewHTTPClient(proxyConfig *model.ProxyConfig, config HTTPClientConfig, encr
 	var transport http.RoundTripper
 
 	if proxyConfig.Protocol == "socks5" {
-		dialer, err := proxy.SOCKS5("tcp", proxyURL.Host, nil, proxy.Direct)
+		// Extract authentication credentials from proxy URL
+		var auth *proxy.Auth
+		if proxyURL.User != nil {
+			password, _ := proxyURL.User.Password()
+			auth = &proxy.Auth{
+				User:     proxyURL.User.Username(),
+				Password: password,
+			}
+		}
+		dialer, err := proxy.SOCKS5("tcp", proxyURL.Host, auth, proxy.Direct)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create SOCKS5 dialer: %w", err)
 		}
