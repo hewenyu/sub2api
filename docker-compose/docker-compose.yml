@@ -86,6 +86,8 @@ services:
     volumes:
       - ./config/config.yaml:/app/config/config.yaml
       - ./config/model_prices_and_context_window.json:/app/config/model_prices_and_context_window.json
+      # 挂载日志目录，配合 config.yaml 中的 ./logs/*.log 路径
+      - ./logs:/app/logs
     depends_on:
       init:
         condition: service_completed_successfully
