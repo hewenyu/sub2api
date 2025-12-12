@@ -13,7 +13,7 @@ database:
   host: "postgres"             # PostgreSQL host (Docker: service name 'postgres')
   port: 5432                   # PostgreSQL port (1-65535, required)
   user: "relay"                # Database user (required)
-  password: "your-database-password"  # Database password (required)
+  password: "relay123"  # Database password (required)
   database: "claude_relay"     # Database name (required)
   ssl_mode: "disable"          # SSL mode: disable, require, verify-ca, verify-full (required)
   max_open_conns: 25           # Maximum open connections (1-1000)
