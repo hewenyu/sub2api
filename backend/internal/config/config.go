@@ -69,12 +69,19 @@ func (s *ServerConfig) Address() string {
 }
 
 type DatabaseConfig struct {
+	// 数据库类型: postgres, sqlite
+	Type string `mapstructure:"type"`
+
+	// PostgreSQL 配置
 	Host     string `mapstructure:"host"`
 	Port     int    `mapstructure:"port"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
 	DBName   string `mapstructure:"dbname"`
 	SSLMode  string `mapstructure:"sslmode"`
+
+	// SQLite 配置
+	Path string `mapstructure:"path"`
 }
 
 func (d *DatabaseConfig) DSN() string {
@@ -84,11 +91,22 @@ func (d *DatabaseConfig) DSN() string {
 	)
 }
 
-// DSNWithTimezone returns DSN with timezone setting
+// DSNWithTimezone returns DSN with timezone setting for the configured database type
 func (d *DatabaseConfig) DSNWithTimezone(tz string) string {
 	if tz == "" {
 		tz = "Asia/Shanghai"
 	}
+
+	// SQLite: 返回文件路径，启用外键约束
+	if strings.ToLower(d.Type) == "sqlite" || strings.ToLower(d.Type) == "sqlite3" {
+		path := d.Path
+		if path == "" {
+			path = "./data/sub2api.db"
+		}
+		return path + "?_fk=1"
+	}
+
+	// PostgreSQL: 返回带时区的DSN
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s TimeZone=%s",
 		d.Host, d.Port, d.User, d.Password, d.DBName, d.SSLMode, tz,
@@ -166,12 +184,14 @@ func setDefaults() {
 	viper.SetDefault("server.idle_timeout", 120)       // 120秒空闲超时
 
 	// Database
+	viper.SetDefault("database.type", "postgres") // postgres 或 sqlite
 	viper.SetDefault("database.host", "localhost")
 	viper.SetDefault("database.port", 5432)
 	viper.SetDefault("database.user", "postgres")
 	viper.SetDefault("database.password", "postgres")
 	viper.SetDefault("database.dbname", "sub2api")
 	viper.SetDefault("database.sslmode", "disable")
+	viper.SetDefault("database.path", "./data/sub2api.db") // SQLite数据库文件路径
 
 	// Redis
 	viper.SetDefault("redis.host", "localhost")

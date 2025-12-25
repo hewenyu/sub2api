@@ -9,11 +9,15 @@ import (
 )
 
 type UserRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	helper *DBHelper
 }
 
 func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{db: db}
+	return &UserRepository{
+		db:     db,
+		helper: NewDBHelper(db),
+	}
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
@@ -67,7 +71,7 @@ func (r *UserRepository) ListWithFilters(ctx context.Context, params pagination.
 	if search != "" {
 		searchPattern := "%" + search + "%"
 		db = db.Where(
-			"email ILIKE ? OR username ILIKE ? OR wechat ILIKE ?",
+			r.helper.CaseInsensitiveLikeMultiple("email", "username", "wechat"),
 			searchPattern, searchPattern, searchPattern,
 		)
 	}
@@ -151,12 +155,47 @@ func (r *UserRepository) ExistsByEmail(ctx context.Context, email string) (bool,
 }
 
 // RemoveGroupFromAllowedGroups 从所有用户的 allowed_groups 数组中移除指定的分组ID
-// 使用 PostgreSQL 的 array_remove 函数
+// PostgreSQL: 使用 array_remove 函数
+// SQLite: 读取-修改-写回模式
 func (r *UserRepository) RemoveGroupFromAllowedGroups(ctx context.Context, groupID int64) (int64, error) {
-	result := r.db.WithContext(ctx).Model(&model.User{}).
-		Where("? = ANY(allowed_groups)", groupID).
-		Update("allowed_groups", gorm.Expr("array_remove(allowed_groups, ?)", groupID))
-	return result.RowsAffected, result.Error
+	if r.helper.SupportsArrayType() {
+		// PostgreSQL: 使用array_remove
+		result := r.db.WithContext(ctx).Model(&model.User{}).
+			Where("? = ANY(allowed_groups)", groupID).
+			Update("allowed_groups", gorm.Expr("array_remove(allowed_groups, ?)", groupID))
+		return result.RowsAffected, result.Error
+	}
+
+	// SQLite: 读取-修改-写回模式
+	var users []model.User
+	if err := r.db.WithContext(ctx).Find(&users).Error; err != nil {
+		return 0, err
+	}
+
+	var affectedCount int64
+	for i := range users {
+		if users[i].AllowedGroups != nil {
+			// 过滤掉要删除的groupID
+			newGroups := make(model.Int64Array, 0)
+			modified := false
+			for _, id := range users[i].AllowedGroups {
+				if id != groupID {
+					newGroups = append(newGroups, id)
+				} else {
+					modified = true
+				}
+			}
+			// 只在实际修改时更新
+			if modified {
+				users[i].AllowedGroups = newGroups
+				if err := r.db.WithContext(ctx).Save(&users[i]).Error; err != nil {
+					return affectedCount, err
+				}
+				affectedCount++
+			}
+		}
+	}
+	return affectedCount, nil
 }
 
 // GetFirstAdmin 获取第一个管理员用户（用于 Admin API Key 认证）

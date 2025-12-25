@@ -10,11 +10,15 @@ import (
 )
 
 type RedeemCodeRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	helper *DBHelper
 }
 
 func NewRedeemCodeRepository(db *gorm.DB) *RedeemCodeRepository {
-	return &RedeemCodeRepository{db: db}
+	return &RedeemCodeRepository{
+		db:     db,
+		helper: NewDBHelper(db),
+	}
 }
 
 func (r *RedeemCodeRepository) Create(ctx context.Context, code *model.RedeemCode) error {
@@ -67,7 +71,7 @@ func (r *RedeemCodeRepository) ListWithFilters(ctx context.Context, params pagin
 	}
 	if search != "" {
 		searchPattern := "%" + search + "%"
-		db = db.Where("code ILIKE ?", searchPattern)
+		db = db.Where(r.helper.CaseInsensitiveLike("code"), searchPattern)
 	}
 
 	if err := db.Count(&total).Error; err != nil {

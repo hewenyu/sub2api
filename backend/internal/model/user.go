@@ -1,12 +1,57 @@
 package model
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+// Int64Array 跨数据库兼容的整型数组类型
+// PostgreSQL: 使用原生 BIGINT[] 数组类型
+// SQLite: 使用 JSON TEXT 类型存储
+type Int64Array []int64
+
+// Value 实现 driver.Valuer 接口,用于将Go值转换为数据库值
+func (a Int64Array) Value() (driver.Value, error) {
+	if a == nil {
+		return nil, nil
+	}
+	// 序列化为JSON（兼容PostgreSQL和SQLite）
+	return json.Marshal(a)
+}
+
+// Scan 实现 sql.Scanner 接口,用于将数据库值转换为Go值
+func (a *Int64Array) Scan(value any) error {
+	if value == nil {
+		*a = nil
+		return nil
+	}
+
+	switch v := value.(type) {
+	case []byte:
+		// SQLite/PostgreSQL JSON: 字节数组
+		return json.Unmarshal(v, a)
+	case string:
+		// 字符串形式的JSON
+		return json.Unmarshal([]byte(v), a)
+	case []int64:
+		// PostgreSQL原生数组(直接扫描)
+		*a = Int64Array(v)
+		return nil
+	default:
+		// PostgreSQL pq.Int64Array 特殊处理
+		if arr, ok := value.(pq.Int64Array); ok {
+			*a = Int64Array(arr)
+			return nil
+		}
+		return fmt.Errorf("unsupported type for Int64Array: %T", value)
+	}
+}
 
 type User struct {
 	ID            int64          `gorm:"primaryKey" json:"id"`
@@ -19,7 +64,7 @@ type User struct {
 	Balance       float64        `gorm:"type:decimal(20,8);default:0;not null" json:"balance"`
 	Concurrency   int            `gorm:"default:5;not null" json:"concurrency"`
 	Status        string         `gorm:"size:20;default:active;not null" json:"status"` // active/disabled
-	AllowedGroups pq.Int64Array  `gorm:"type:bigint[]" json:"allowed_groups"`
+	AllowedGroups Int64Array `gorm:"type:json" json:"allowed_groups"`
 	CreatedAt     time.Time      `gorm:"not null" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"not null" json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `gorm:"index" json:"-"`

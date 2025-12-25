@@ -13,11 +13,15 @@ import (
 )
 
 type AccountRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	helper *DBHelper
 }
 
 func NewAccountRepository(db *gorm.DB) *AccountRepository {
-	return &AccountRepository{db: db}
+	return &AccountRepository{
+		db:     db,
+		helper: NewDBHelper(db),
+	}
 }
 
 func (r *AccountRepository) Create(ctx context.Context, account *model.Account) error {
@@ -48,7 +52,9 @@ func (r *AccountRepository) GetByCRSAccountID(ctx context.Context, crsAccountID 
 	}
 
 	var account model.Account
-	err := r.db.WithContext(ctx).Where("extra->>'crs_account_id' = ?", crsAccountID).First(&account).Error
+	// 使用方言感知的JSON提取
+	whereClause := r.helper.JSONExtract("extra", "crs_account_id") + " = ?"
+	err := r.db.WithContext(ctx).Where(whereClause, crsAccountID).First(&account).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -94,7 +100,7 @@ func (r *AccountRepository) ListWithFilters(ctx context.Context, params paginati
 	}
 	if search != "" {
 		searchPattern := "%" + search + "%"
-		db = db.Where("name ILIKE ?", searchPattern)
+		db = db.Where(r.helper.CaseInsensitiveLike("name"), searchPattern)
 	}
 
 	if err := db.Count(&total).Error; err != nil {

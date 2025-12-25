@@ -9,11 +9,15 @@ import (
 )
 
 type ApiKeyRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	helper *DBHelper
 }
 
 func NewApiKeyRepository(db *gorm.DB) *ApiKeyRepository {
-	return &ApiKeyRepository{db: db}
+	return &ApiKeyRepository{
+		db:     db,
+		helper: NewDBHelper(db),
+	}
 }
 
 func (r *ApiKeyRepository) Create(ctx context.Context, key *model.ApiKey) error {
@@ -124,7 +128,7 @@ func (r *ApiKeyRepository) SearchApiKeys(ctx context.Context, userID int64, keyw
 
 	if keyword != "" {
 		searchPattern := "%" + keyword + "%"
-		db = db.Where("name ILIKE ?", searchPattern)
+		db = db.Where(r.helper.CaseInsensitiveLike("name"), searchPattern)
 	}
 
 	if err := db.Limit(limit).Order("id DESC").Find(&keys).Error; err != nil {

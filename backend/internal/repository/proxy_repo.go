@@ -9,11 +9,15 @@ import (
 )
 
 type ProxyRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	helper *DBHelper
 }
 
 func NewProxyRepository(db *gorm.DB) *ProxyRepository {
-	return &ProxyRepository{db: db}
+	return &ProxyRepository{
+		db:     db,
+		helper: NewDBHelper(db),
+	}
 }
 
 func (r *ProxyRepository) Create(ctx context.Context, proxy *model.Proxy) error {
@@ -57,7 +61,7 @@ func (r *ProxyRepository) ListWithFilters(ctx context.Context, params pagination
 	}
 	if search != "" {
 		searchPattern := "%" + search + "%"
-		db = db.Where("name ILIKE ?", searchPattern)
+		db = db.Where(r.helper.CaseInsensitiveLike("name"), searchPattern)
 	}
 
 	if err := db.Count(&total).Error; err != nil {

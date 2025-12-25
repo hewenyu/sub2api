@@ -36,8 +36,8 @@ type Account struct {
 	Name         string         `gorm:"size:100;not null" json:"name"`
 	Platform     string         `gorm:"size:50;not null" json:"platform"`           // anthropic/openai/gemini
 	Type         string         `gorm:"size:20;not null" json:"type"`               // oauth/apikey
-	Credentials  JSONB          `gorm:"type:jsonb;default:'{}'" json:"credentials"` // 凭证(加密存储)
-	Extra        JSONB          `gorm:"type:jsonb;default:'{}'" json:"extra"`       // 扩展信息
+	Credentials  JSONB          `gorm:"type:json;serializer:json;default:'{}'" json:"credentials"` // 凭证(加密存储)
+	Extra        JSONB          `gorm:"type:json;serializer:json;default:'{}'" json:"extra"`       // 扩展信息
 	ProxyID      *int64         `gorm:"index" json:"proxy_id"`
 	Concurrency  int            `gorm:"default:3;not null" json:"concurrency"`
 	Priority     int            `gorm:"default:50;not null" json:"priority"`           // 1-100，越小越高
